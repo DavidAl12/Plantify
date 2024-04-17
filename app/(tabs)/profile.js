@@ -57,86 +57,88 @@ export default function Profile() {
     <ScrollView style={styles.container}>
       <AppHeader />
 
-      {/* PERFIL */}
-      <View style={styles.profileCard}>
-        <View style={styles.avatarContainer}>
-          <Image
-            source={{
-              uri: user?.photoURL || "https://i.imgur.com/6VBx3io.png",
-            }}
-            style={styles.avatar}
-          />
+      <View style={styles.content}>
+        {/* PERFIL */}
+        <View style={styles.profileCard}>
+          <View style={styles.avatarContainer}>
+            <Image
+              source={{
+                uri: user?.photoURL || "https://i.imgur.com/6VBx3io.png",
+              }}
+              style={styles.avatar}
+            />
+          </View>
+
+          <Text style={styles.name}>{user?.displayName || "Usuario"}</Text>
+          <Text style={styles.email}>{user?.email}</Text>
         </View>
 
-        <Text style={styles.name}>{user?.displayName || "Usuario"}</Text>
-        <Text style={styles.email}>{user?.email}</Text>
-      </View>
+        {/* CONFIGURACIÓN */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>CONFIGURACIÓN</Text>
 
-      {/* CONFIGURACIÓN */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>CONFIGURACIÓN</Text>
+          <MenuItem
+            icon="person-outline"
+            title="Información Personal"
+            subtitle="Editar nombre"
+            isOpen={openSection === "personal"}
+            onPress={() =>
+              setOpenSection(openSection === "personal" ? null : "personal")
+            }
+          >
+            <PersonalInfo user={user} />
+          </MenuItem>
 
-        <MenuItem
-          icon="person-outline"
-          title="Información Personal"
-          subtitle="Editar nombre"
-          isOpen={openSection === "personal"}
-          onPress={() =>
-            setOpenSection(openSection === "personal" ? null : "personal")
-          }
-        >
-          <PersonalInfo user={user} />
-        </MenuItem>
+          <MenuItem
+            icon="shield-checkmark-outline"
+            title="Seguridad"
+            subtitle="Cambiar contraseña"
+            isOpen={openSection === "security"}
+            onPress={() =>
+              setOpenSection(openSection === "security" ? null : "security")
+            }
+          >
+            <SecuritySection />
+          </MenuItem>
 
-        <MenuItem
-          icon="shield-checkmark-outline"
-          title="Seguridad"
-          subtitle="Cambiar contraseña"
-          isOpen={openSection === "security"}
-          onPress={() =>
-            setOpenSection(openSection === "security" ? null : "security")
-          }
-        >
-          <SecuritySection />
-        </MenuItem>
-
-        <MenuItem
-          icon="notifications-outline"
-          title="Notificaciones"
-          subtitle="Activar o desactivar"
-          isOpen={openSection === "notifications"}
-          onPress={() =>
-            setOpenSection(
-              openSection === "notifications" ? null : "notifications",
-            )
-          }
-        >
-          <NotificationsSection />
-        </MenuItem>
-      </View>
-
-      {/* STATS */}
-      <View style={styles.stats}>
-        <View style={styles.cardPrimary}>
-          <Ionicons name="leaf-outline" size={28} style={styles.iconBg} />
-          <Text style={styles.statNumber}>{plantsCount}</Text>
-          <Text style={styles.statText}>Plantas activas</Text>
+          <MenuItem
+            icon="notifications-outline"
+            title="Notificaciones"
+            subtitle="Activar o desactivar"
+            isOpen={openSection === "notifications"}
+            onPress={() =>
+              setOpenSection(
+                openSection === "notifications" ? null : "notifications",
+              )
+            }
+          >
+            <NotificationsSection />
+          </MenuItem>
         </View>
 
-        <View style={styles.cardSecondary}>
-          <Ionicons name="trophy-outline" size={28} style={styles.iconBg} />
-          <Text style={styles.statNumber}>Califícanos</Text>
-          <Text style={styles.statText}>Ayuda a mejorar</Text>
+        {/* STATS */}
+        <View style={styles.stats}>
+          <View style={styles.cardPrimary}>
+            <Ionicons name="leaf-outline" size={28} style={styles.iconBg} />
+            <Text style={styles.statNumber}>{plantsCount}</Text>
+            <Text style={styles.statText}>Plantas activas</Text>
+          </View>
+
+          <View style={styles.cardSecondary}>
+            <Ionicons name="trophy-outline" size={28} style={styles.iconBg} />
+            <Text style={styles.statNumber}>Califícanos</Text>
+            <Text style={styles.statText}>Ayuda a mejorar</Text>
+          </View>
         </View>
+
+        {/* LOGOUT */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
+          <Text style={styles.logoutText}>Cerrar Sesión</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.version}>PLANTIFY APP VERSION 1.0.0</Text>
       </View>
-
-      {/* LOGOUT */}
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
-        <Text style={styles.logoutText}>Cerrar Sesión</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.version}>PLANTIFY APP VERSION 1.0.0</Text>
     </ScrollView>
   );
 }
@@ -279,6 +281,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+
+  content: {
     padding: 20,
   },
 

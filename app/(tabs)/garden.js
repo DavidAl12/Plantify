@@ -2,14 +2,15 @@ import { useRouter } from "expo-router";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import AppHeader from "../../components/ui/AppHeader";
 import { auth, db } from "../../src/config/firebase";
 
 // Helpers
@@ -30,7 +31,7 @@ export default function Garden() {
 
     const q = query(
       collection(db, "users", user.uid, "plants"),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -46,7 +47,7 @@ export default function Garden() {
 
   // FILTRO
   const filteredPlants = plants.filter((p) =>
-    p.name?.toLowerCase().includes(search.toLowerCase())
+    p.name?.toLowerCase().includes(search.toLowerCase()),
   );
 
   // MÉTRICAS
@@ -105,7 +106,9 @@ export default function Garden() {
           <Text style={styles.name}>{item.name}</Text>
 
           <Text style={styles.subtitle}>
-            {necesita ? "Atrasado" : `En ${item.wateringFrequencyDays || 0} días`}
+            {necesita
+              ? "Atrasado"
+              : `En ${item.wateringFrequencyDays || 0} días`}
           </Text>
         </View>
       </TouchableOpacity>
@@ -114,8 +117,10 @@ export default function Garden() {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
+      <AppHeader />
+
+      {/* BUSCADOR */}
+      <View style={styles.searchContainer}>
         <TextInput
           placeholder="Busca en tu jardín..."
           value={search}
@@ -166,9 +171,10 @@ export default function Garden() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f6f8f5" },
 
-  header: {
+  searchContainer: {
     flexDirection: "row",
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 10,
     gap: 10,
   },
 
@@ -177,6 +183,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#eee",
     borderRadius: 20,
     paddingHorizontal: 16,
+    height: 45,
   },
 
   addButton: {
@@ -197,6 +204,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     marginBottom: 10,
+    marginTop: 10,
   },
 
   metricBox: {

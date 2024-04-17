@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import AppHeader from "../../components/ui/AppHeader";
 import { auth, db } from "../../src/config/firebase";
 
 export default function Home() {
@@ -33,7 +34,7 @@ export default function Home() {
           ...doc.data(),
         }));
         setPlants(data);
-      }
+      },
     );
 
     return unsubscribe;
@@ -42,7 +43,7 @@ export default function Home() {
   // 🌤 CLIMA (Cali ejemplo)
   useEffect(() => {
     fetch(
-      "https://api.open-meteo.com/v1/forecast?latitude=3.44&longitude=-76.52&current_weather=true&hourly=relativehumidity_2m"
+      "https://api.open-meteo.com/v1/forecast?latitude=3.44&longitude=-76.52&current_weather=true&hourly=relativehumidity_2m",
     )
       .then((res) => res.json())
       .then((data) => {
@@ -62,97 +63,98 @@ export default function Home() {
   ];
 
   return (
-    <ScrollView style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Text style={styles.welcome}>Bienvenido de nuevo</Text>
-        <Text style={styles.name}>Hola, {userName}</Text>
-      </View>
+    <View style={styles.container}>
+      <AppHeader />
 
-      {/* MI JARDÍN */}
-      <View style={styles.section}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.sectionTitle}>MI JARDÍN</Text>
-
-          <TouchableOpacity
-            onPress={() => router.push("/plant/add")}
-            style={styles.addBtn}
-          >
-            <Text style={{ color: "white", fontSize: 18 }}>+</Text>
-          </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Saludo debajo del header */}
+        <View style={styles.greeting}>
+          <Text style={styles.welcome}>Bienvenido de nuevo</Text>
+          <Text style={styles.name}>Hola, {userName} 👋</Text>
         </View>
+        {/* MI JARDÍN */}
+        <View style={styles.section}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.sectionTitle}>MI JARDÍN</Text>
 
-        <FlatList
-          data={plants}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.plantCard}
-              onPress={() => router.push(`/plant/${item.id}`)}
+              onPress={() => router.push("/plant/add")}
+              style={styles.addBtn}
             >
-              <Image
-                source={{
-                  uri:
-                    item.imageUrl ||
-                    "https://via.placeholder.com/150",
-                }}
-                style={styles.plantImage}
-              />
-              <Text style={styles.plantName}>
-                {item.commonNames?.[0] || item.name}
-              </Text>
+              <Text style={{ color: "white", fontSize: 18 }}>+</Text>
             </TouchableOpacity>
-          )}
-        />
-      </View>
-
-      {/* TIPS */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>TIPS</Text>
-
-        <FlatList
-          data={tips}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item, i) => i.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.tipCard}>
-              <Text style={styles.tipText}>{item}</Text>
-            </View>
-          )}
-        />
-      </View>
-
-      {/* CLIMA */}
-      {weather && (
-        <View style={styles.weatherRow}>
-          <View style={styles.weatherBox}>
-            <Text style={styles.weatherTitle}>Pronóstico</Text>
-            <Text style={styles.weatherValue}>
-              {weather.temp}°C
-            </Text>
           </View>
 
-          <View style={styles.weatherBox}>
-            <Text style={styles.weatherTitle}>Humedad</Text>
-            <Text style={styles.weatherValue}>
-              {weather.humidity}%
-            </Text>
-          </View>
+          <FlatList
+            data={plants}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.plantCard}
+                onPress={() => router.push(`/plant/${item.id}`)}
+              >
+                <Image
+                  source={{
+                    uri: item.imageUrl || "https://via.placeholder.com/150",
+                  }}
+                  style={styles.plantImage}
+                />
+                <Text style={styles.plantName}>
+                  {item.commonNames?.[0] || item.name}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
         </View>
-      )}
+        {/* TIPS */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>TIPS</Text>
 
-      <View style={{ height: 40 }} />
-    </ScrollView>
+          <FlatList
+            data={tips}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item, i) => i.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.tipCard}>
+                <Text style={styles.tipText}>{item}</Text>
+              </View>
+            )}
+          />
+        </View>
+        {/* CLIMA */}
+        {weather && (
+          <View style={styles.weatherRow}>
+            <View style={styles.weatherBox}>
+              <Text style={styles.weatherTitle}>Pronóstico</Text>
+              <Text style={styles.weatherValue}>{weather.temp}°C</Text>
+            </View>
+
+            <View style={styles.weatherBox}>
+              <Text style={styles.weatherTitle}>Humedad</Text>
+              <Text style={styles.weatherValue}>{weather.humidity}%</Text>
+            </View>
+          </View>
+        )}
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f4f7f2" },
+  container: {
+    flex: 1,
+    backgroundColor: "#f4f7f2",
+  },
 
-  header: { padding: 20, paddingTop: 60 },
+  content: {
+    paddingBottom: 40,
+  },
+
+  greeting: { padding: 20, paddingTop: 10 },
 
   welcome: { color: "#888" },
 

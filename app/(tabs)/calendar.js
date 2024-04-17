@@ -155,64 +155,68 @@ export default function CalendarScreen() {
     <ScrollView style={styles.container}>
       <AppHeader />
 
-      <View style={styles.banner}>
-        <Text style={styles.bannerTitle}>Calendario</Text>
-        <Text style={styles.bannerText}>
-          Aquí puedes ver cuándo tus plantas necesitan atención. ¡No olvides
-          mantener tu jardín siempre saludable!
-        </Text>
-      </View>
-
-      <Calendar
-        markingType="multi-dot"
-        onDayPress={(day) => setSelectedDate(day.dateString)} // 🔑 SOLO cambia vista
-        markedDates={markedDates}
-        theme={{
-          todayTextColor: COLORS.primary,
-          arrowColor: COLORS.primary,
-          monthTextColor: COLORS.primary,
-          textMonthFontWeight: "bold",
-          textSectionTitleColor: "#000",
-        }}
-      />
-
-      <View style={styles.tasksSection}>
-        <View style={styles.tasksHeader}>
-          <Text style={styles.tasksTitle}>Tareas Diarias</Text>
-
-          <View style={styles.dateBadge}>
-            <Text style={styles.dateBadgeText}>
-              {formatDatePretty(selectedDate)}
-            </Text>
-          </View>
+      <View style={styles.content}>
+        <View style={styles.banner}>
+          <Text style={styles.bannerTitle}>Calendario</Text>
+          <Text style={styles.bannerText}>
+            Aquí puedes ver cuándo tus plantas necesitan atención. ¡No olvides
+            mantener tu jardín siempre saludable!
+          </Text>
         </View>
 
-        {selectedTasks.length === 0 ? (
-          <Text style={styles.noTasks}>No hay tareas programadas</Text>
-        ) : (
-          selectedTasks.map((task) => (
-            <View key={task.id} style={styles.taskCard}>
-              <View style={styles.taskLeft}>
-                {task.image && (
-                  <Image
-                    source={{ uri: task.image }}
-                    style={styles.taskImage}
-                  />
-                )}
+        <Calendar
+          markingType="multi-dot"
+          onDayPress={(day) => setSelectedDate(day.dateString)}
+          markedDates={markedDates}
+          theme={{
+            todayTextColor: COLORS.primary,
+            arrowColor: COLORS.primary,
+            monthTextColor: COLORS.primary,
+            textMonthFontWeight: "bold",
+            textSectionTitleColor: "#000",
+          }}
+        />
 
-                <Text style={styles.taskTitle}>{getTaskLabel(task)}</Text>
-              </View>
+        <View style={styles.tasksSection}>
+          <View style={styles.tasksHeader}>
+            <Text style={styles.tasksTitle}>Tareas Diarias</Text>
 
-              <TouchableOpacity onPress={() => toggleTask(task)}>
-                <Ionicons
-                  name={task.completed ? "checkmark-circle" : "ellipse-outline"}
-                  size={26}
-                  color={task.completed ? COLORS.primary : "gray"}
-                />
-              </TouchableOpacity>
+            <View style={styles.dateBadge}>
+              <Text style={styles.dateBadgeText}>
+                {formatDatePretty(selectedDate)}
+              </Text>
             </View>
-          ))
-        )}
+          </View>
+
+          {selectedTasks.length === 0 ? (
+            <Text style={styles.noTasks}>No hay tareas programadas</Text>
+          ) : (
+            selectedTasks.map((task) => (
+              <View key={task.id} style={styles.taskCard}>
+                <View style={styles.taskLeft}>
+                  {task.image && (
+                    <Image
+                      source={{ uri: task.image }}
+                      style={styles.taskImage}
+                    />
+                  )}
+
+                  <Text style={styles.taskTitle}>{getTaskLabel(task)}</Text>
+                </View>
+
+                <TouchableOpacity onPress={() => toggleTask(task)}>
+                  <Ionicons
+                    name={
+                      task.completed ? "checkmark-circle" : "ellipse-outline"
+                    }
+                    size={26}
+                    color={task.completed ? COLORS.primary : "gray"}
+                  />
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </View>
       </View>
     </ScrollView>
   );
@@ -222,7 +226,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    padding: 20,
   },
 
   banner: {

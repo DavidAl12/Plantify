@@ -1,57 +1,59 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Header from "../../components/ui/AppHeader"; // tu header reutilizable
+import AppHeader from "../../components/ui/AppHeader"; // tu header reutilizable
 import { COLORS } from "../../styles/colors";
 
 export default function History() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F5F5DC" }}>
-      <Header />
+      <AppHeader />
 
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* TITULO */}
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Historial de Cuidados</Text>
-          <Text style={styles.subtitle}>
-            Seguimiento de tu viaje botánico 🌱
-          </Text>
+      <ScrollView>
+        <View style={styles.container}>
+          {/* TITULO */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Historial de Cuidados</Text>
+            <Text style={styles.subtitle}>
+              Seguimiento de tu viaje botánico 🌱
+            </Text>
+          </View>
+
+          {/* HOY */}
+          <Section title="HOY" primary>
+            <TimelineItem
+              icon="water-outline"
+              title="Revisión de tierra"
+              time="09:15 AM"
+              description="Humedad del suelo al 40%. No necesita riego todavía."
+            />
+
+            <TimelineItem
+              icon="flask-outline"
+              title="Fertilización de Helecho"
+              time="11:45 AM"
+              description="Aplicación de fertilizante orgánico."
+            />
+
+            <TimelineItem
+              icon="leaf-outline"
+              title="Cuidado general"
+              time="02:30 PM"
+              description="Revisión de hojas y crecimiento."
+            />
+          </Section>
+
+          {/* AYER */}
+          <Section title="AYER">
+            <TimelineItem
+              icon="sparkles-outline"
+              title="Limpieza de hojas"
+              time="04:00 PM"
+              description="Limpieza del Ficus para mejorar fotosíntesis."
+              faded
+            />
+          </Section>
         </View>
-
-        {/* HOY */}
-        <Section title="HOY" primary>
-          <TimelineItem
-            icon="water-outline"
-            title="Revisión de tierra"
-            time="09:15 AM"
-            description="Humedad del suelo al 40%. No necesita riego todavía."
-          />
-
-          <TimelineItem
-            icon="flask-outline"
-            title="Fertilización de Helecho"
-            time="11:45 AM"
-            description="Aplicación de fertilizante orgánico."
-          />
-
-          <TimelineItem
-            icon="leaf-outline"
-            title="Cuidado general"
-            time="02:30 PM"
-            description="Revisión de hojas y crecimiento."
-          />
-        </Section>
-
-        {/* AYER */}
-        <Section title="AYER">
-          <TimelineItem
-            icon="sparkles-outline"
-            title="Limpieza de hojas"
-            time="04:00 PM"
-            description="Limpieza del Ficus para mejorar fotosíntesis."
-            faded
-          />
-        </Section>
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,29 +1,49 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { signOut } from "firebase/auth";
+import { signOut, updatePassword, updateProfile } from "firebase/auth";
+import { collection, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+
 import AppHeader from "../../components/ui/AppHeader";
-import { auth } from "../../src/config/firebase";
+import { auth, db } from "../../src/config/firebase";
 import { COLORS } from "../../styles/colors";
 
 export default function Profile() {
   const router = useRouter();
 
   const [user, setUser] = useState(null);
+  const [plantsCount, setPlantsCount] = useState(0);
+  const [openSection, setOpenSection] = useState(null);
 
+  // 🔥 Cargar usuario
   useEffect(() => {
     setUser(auth.currentUser);
   }, []);
 
-  // 🔥 LOGOUT
+  // 🌱 Contar plantas
+  useEffect(() => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    const ref = collection(db, "users", currentUser.uid, "plants");
+
+    const unsubscribe = onSnapshot(ref, (snapshot) => {
+      setPlantsCount(snapshot.size);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // 🔥 Logout
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -37,7 +57,7 @@ export default function Profile() {
     <ScrollView style={styles.container}>
       <AppHeader />
 
-      {/* Perfil */}
+      {/* PERFIL */}
       <View style={styles.profileCard}>
         <View style={styles.avatarContainer}>
           <Image
@@ -46,55 +66,71 @@ export default function Profile() {
             }}
             style={styles.avatar}
           />
-          <TouchableOpacity style={styles.editButton}>
-            <Ionicons name="pencil" size={14} color="#fff" />
-          </TouchableOpacity>
         </View>
 
         <Text style={styles.name}>{user?.displayName || "Usuario"}</Text>
-
         <Text style={styles.email}>{user?.email}</Text>
       </View>
 
-      {/* Opciones */}
+      {/* CONFIGURACIÓN */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>CONFIGURACIÓN</Text>
 
         <MenuItem
           icon="person-outline"
           title="Información Personal"
-          subtitle="Nombre, correo y ubicación"
-        />
+          subtitle="Editar nombre"
+          isOpen={openSection === "personal"}
+          onPress={() =>
+            setOpenSection(openSection === "personal" ? null : "personal")
+          }
+        >
+          <PersonalInfo user={user} />
+        </MenuItem>
 
         <MenuItem
           icon="shield-checkmark-outline"
           title="Seguridad"
-          subtitle="Contraseña y autenticación"
-        />
+          subtitle="Cambiar contraseña"
+          isOpen={openSection === "security"}
+          onPress={() =>
+            setOpenSection(openSection === "security" ? null : "security")
+          }
+        >
+          <SecuritySection />
+        </MenuItem>
 
         <MenuItem
           icon="notifications-outline"
           title="Notificaciones"
-          subtitle="Alertas de riego y cuidados"
-        />
+          subtitle="Activar o desactivar"
+          isOpen={openSection === "notifications"}
+          onPress={() =>
+            setOpenSection(
+              openSection === "notifications" ? null : "notifications",
+            )
+          }
+        >
+          <NotificationsSection />
+        </MenuItem>
       </View>
 
-      {/* Stats */}
+      {/* STATS */}
       <View style={styles.stats}>
         <View style={styles.cardPrimary}>
           <Ionicons name="leaf-outline" size={28} style={styles.iconBg} />
-          <Text style={styles.statNumber}>12</Text>
+          <Text style={styles.statNumber}>{plantsCount}</Text>
           <Text style={styles.statText}>Plantas activas</Text>
         </View>
 
         <View style={styles.cardSecondary}>
           <Ionicons name="trophy-outline" size={28} style={styles.iconBg} />
-          <Text style={styles.statNumber}>Calificanos</Text>
+          <Text style={styles.statNumber}>Califícanos</Text>
           <Text style={styles.statText}>Ayuda a mejorar</Text>
         </View>
       </View>
 
-      {/* Logout */}
+      {/* LOGOUT */}
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
         <Text style={styles.logoutText}>Cerrar Sesión</Text>
@@ -105,41 +141,104 @@ export default function Profile() {
   );
 }
 
-// 🔹 COMPONENTE REUTILIZABLE
-function MenuItem({ icon, title, subtitle }) {
+//////////////////// COMPONENTES ////////////////////
+
+function MenuItem({ icon, title, subtitle, isOpen, onPress, children }) {
   return (
-    <TouchableOpacity style={styles.menuItem}>
-      <View style={styles.menuIcon}>
-        <Ionicons name={icon} size={20} color={COLORS.onSecondary} />
-      </View>
+    <View>
+      <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+        <View style={styles.menuIcon}>
+          <Ionicons name={icon} size={20} color={COLORS.onSecondary} />
+        </View>
 
-      <View style={{ flex: 1 }}>
-        <Text style={styles.menuTitle}>{title}</Text>
-        <Text style={styles.menuSubtitle}>{subtitle}</Text>
-      </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.menuTitle}>{title}</Text>
+          <Text style={styles.menuSubtitle}>{subtitle}</Text>
+        </View>
 
-      <Ionicons name="chevron-forward" size={18} />
-    </TouchableOpacity>
+        <Ionicons name={isOpen ? "chevron-up" : "chevron-forward"} size={18} />
+      </TouchableOpacity>
+
+      {isOpen && <View style={styles.dropdown}>{children}</View>}
+    </View>
   );
 }
+
+function PersonalInfo({ user }) {
+  const [name, setName] = useState(user?.displayName || "");
+
+  const handleSave = async () => {
+    if (!auth.currentUser) return;
+
+    await updateProfile(auth.currentUser, {
+      displayName: name,
+    });
+  };
+
+  return (
+    <View>
+      <Text>Nombre</Text>
+      <TextInput value={name} onChangeText={setName} style={styles.input} />
+
+      <Text>Correo</Text>
+      <TextInput value={user?.email} editable={false} style={styles.input} />
+
+      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+        <Text style={{ color: "white" }}>Guardar</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function SecuritySection() {
+  const [password, setPassword] = useState("");
+
+  const handleChangePassword = async () => {
+    if (!auth.currentUser) return;
+    await updatePassword(auth.currentUser, password);
+  };
+
+  return (
+    <View>
+      <Text>Nueva contraseña</Text>
+      <TextInput
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        style={styles.input}
+      />
+
+      <TouchableOpacity style={styles.saveBtn} onPress={handleChangePassword}>
+        <Text style={{ color: "white" }}>Actualizar</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function NotificationsSection() {
+  const [enabled, setEnabled] = useState(true);
+
+  return (
+    <View>
+      <Text>Recordatorios</Text>
+
+      <TouchableOpacity
+        style={styles.toggle}
+        onPress={() => setEnabled(!enabled)}
+      >
+        <Text>{enabled ? "Activadas" : "Desactivadas"}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+//////////////////// ESTILOS ////////////////////
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
     padding: 20,
-  },
-
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.onSurface,
   },
 
   profileCard: {
@@ -150,24 +249,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  avatarContainer: {
-    position: "relative",
-    marginBottom: 10,
-  },
-
   avatar: {
     width: 90,
     height: 90,
     borderRadius: 50,
-  },
-
-  editButton: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    backgroundColor: COLORS.primary,
-    padding: 6,
-    borderRadius: 20,
   },
 
   name: {
@@ -178,10 +263,6 @@ const styles = StyleSheet.create({
 
   email: {
     color: COLORS.onSurfaceVariant,
-  },
-
-  section: {
-    marginBottom: 20,
   },
 
   sectionTitle: {
@@ -210,14 +291,31 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  menuTitle: {
-    fontWeight: "600",
-    color: COLORS.onSurface,
+  dropdown: {
+    padding: 10,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    marginBottom: 10,
   },
 
-  menuSubtitle: {
-    fontSize: 12,
-    color: COLORS.onSurfaceVariant,
+  input: {
+    backgroundColor: "#f1f1f1",
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+
+  saveBtn: {
+    backgroundColor: COLORS.primary,
+    padding: 10,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+
+  toggle: {
+    padding: 10,
+    backgroundColor: "#eee",
+    borderRadius: 10,
   },
 
   stats: {

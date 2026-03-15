@@ -52,6 +52,9 @@ export default function Input({
           autoCapitalize={autoCapitalize}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          underlineColorAndroid="transparent"
+          keyboardAppearance="light"
+          outlineStyle={{ borderWidth: 0 }}
         />
 
         {/* Botón mostrar/ocultar contraseña */}

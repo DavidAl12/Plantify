@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Plantify",
-    "slug": "Plantify",
+    "name": "Perflora",
+    "slug": "Perflora",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logoApp.png",
-    "scheme": "plantify",
+    "scheme": "perflora",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

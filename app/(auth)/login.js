@@ -1,5 +1,5 @@
 // app/(auth)/login.js
-import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
   sendPasswordResetEmail,
@@ -135,15 +135,27 @@ export default function Login() {
           </View>
 
           {/* Botones sociales */}
-          <View style={styles.socialRow}>
-            <TouchableOpacity style={styles.socialButton}>
-              <FontAwesome name="google" size={22} color={COLORS.primary} />
+          <View style={styles.socialColumn}>
+            {/* Botón Google */}
+            <TouchableOpacity style={styles.socialButtonWide}>
+              <Image
+                source={require("../../assets/images/google-logo.png")}
+                style={styles.socialLogo}
+                resizeMode="contain"
+              />
+              <Text style={styles.socialButtonText}>Continuar con Google</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
-              <FontAwesome name="facebook" size={22} color={COLORS.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
-              <FontAwesome name="apple" size={22} color={COLORS.primary} />
+
+            {/* Botón Microsoft */}
+            <TouchableOpacity style={styles.socialButtonWide}>
+              <Image
+                source={require("../../assets/images/microsoft-logo.png")}
+                style={styles.socialLogo}
+                resizeMode="contain"
+              />
+              <Text style={styles.socialButtonText}>
+                Continuar con Microsoft
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -276,19 +288,35 @@ const styles = StyleSheet.create({
   },
 
   // Botones sociales
-  socialRow: {
-    flexDirection: "row",
+  socialColumn: {
+    width: "100%",
     gap: 12,
   },
-  socialButton: {
-    flex: 1,
-    paddingVertical: 12,
-    backgroundColor: COLORS.surfaceContainerLowest,
-    borderRadius: 12,
+  socialButtonWide: {
+    width: "100%",
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 12,
+    paddingVertical: 14,
+    backgroundColor: COLORS.surfaceContainerLowest,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.outlineVariant + "30",
+    borderColor: COLORS.outlineVariant + "40",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  socialButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.onSurface,
+  },
+  socialLogo: {
+    width: 22,
+    height: 22,
   },
 
   // Footer

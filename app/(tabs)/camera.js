@@ -33,11 +33,13 @@ export default function CameraScreen() {
     setLoading(true);
 
     try {
-      // quality: 0.15 — suficiente para identificación, base64 mucho más pequeño = más rápido
+      // ✅ FIX: quality 0.15 era demasiado bajo y causaba mal reconocimiento.
+      // 0.5 = buen balance entre precisión de Plant.id y tamaño del base64.
+      // skipProcessing: false para que Expo corrija orientación automáticamente.
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.15,
+        quality: 0.5,
         base64: true,
-        skipProcessing: true,
+        skipProcessing: false,
       });
 
       router.push({
@@ -59,8 +61,14 @@ export default function CameraScreen() {
       <CameraView style={{ flex: 1 }} ref={cameraRef} facing="back" />
 
       <View style={styles.overlay}>
-        <View style={styles.frameGuide} />
-        <Text style={styles.hint}>Centra la planta en el recuadro</Text>
+        {/* Esquinas decorativas del marco */}
+        <View style={styles.frameWrapper}>
+          <View style={[styles.corner, styles.cornerTL]} />
+          <View style={[styles.corner, styles.cornerTR]} />
+          <View style={[styles.corner, styles.cornerBL]} />
+          <View style={[styles.corner, styles.cornerBR]} />
+        </View>
+        <Text style={styles.hint}>Centra la hoja o flor en el recuadro</Text>
       </View>
 
       <View style={styles.captureContainer}>
@@ -104,19 +112,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  frameGuide: {
-    width: 250,
-    height: 250,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.7)",
-    borderRadius: 20,
-    borderStyle: "dashed",
+  // ✅ Marco con esquinas en lugar de borde dashed completo — más elegante
+  frameWrapper: {
+    width: 260,
+    height: 260,
+    position: "relative",
   },
+  corner: {
+    position: "absolute",
+    width: 28,
+    height: 28,
+    borderColor: "white",
+  },
+  cornerTL: { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 6 },
+  cornerTR: { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 6 },
+  cornerBL: { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 6 },
+  cornerBR: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 6 },
   hint: {
     color: "rgba(255,255,255,0.9)",
-    marginTop: 12,
+    marginTop: 16,
     fontSize: 14,
     fontWeight: "500",
+    backgroundColor: "rgba(0,0,0,0.35)",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   center: {
     flex: 1,

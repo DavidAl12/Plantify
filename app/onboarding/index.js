@@ -1,6 +1,6 @@
 // app/onboarding/index.js
 import { useRouter } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { COLORS } from "../../styles/colors";
 
 export default function Onboarding() {
@@ -18,8 +18,11 @@ export default function Onboarding() {
       <View style={styles.content}>
         {/* Logo */}
         <View style={styles.logoRow}>
-          <Text style={styles.logoIcon}>🌿</Text>
-          <Text style={styles.appName}>Plantify</Text>
+          <Image
+            source={require("../../assets/images/logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Tarjeta central */}
@@ -103,8 +106,9 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 4,
   },
-  logoIcon: {
-    fontSize: 36,
+  logoImage: {
+    width: 150,
+    height: 150,
   },
   appName: {
     fontSize: 34,

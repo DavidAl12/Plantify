@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Plantify",
-    "slug": "Plantify",
+    "name": "Perflora",
+    "slug": "Perflora",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "plantify",
+    "icon": "./assets/images/logoApp.png",
+    "scheme": "perflora",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -13,17 +13,17 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/logoApp.png",
+        "backgroundImage": "./assets/images/logoApp.png",
+        "monochromeImage": "./assets/images/logoApp.png",
+        "backgroundColor": "#ebffe7"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/logoApp.png"
     },
     "plugins": [
       "expo-router",

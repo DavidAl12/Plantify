@@ -4,7 +4,6 @@ import { useRouter } from "expo-router";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { useState } from "react";
 import {
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -26,45 +25,96 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const validateField = (name, value) => {
+    switch (name) {
+      case "name":
+        if (!value) return "El nombre es obligatorio";
+        return "";
+
+      case "email":
+        if (!value) return "El correo es obligatorio";
+        if (!/\S+@\S+\.\S+/.test(value)) return "Correo inválido";
+        return "";
+
+      case "password":
+        if (!value) return "La contraseña es obligatoria";
+        if (value.length < 6) return "Mínimo 6 caracteres";
+        if (!/[A-Z]/.test(value)) return "Debe tener una mayúscula";
+        if (!/[0-9]/.test(value)) return "Debe tener un número";
+        return "";
+
+      case "confirmPassword":
+        if (!value) return "Confirma tu contraseña";
+        if (value !== password) return "Las contraseñas no coinciden";
+        return "";
+
+      default:
+        return "";
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {
+      name: validateField("name", name),
+      email: validateField("email", email),
+      password: validateField("password", password),
+      confirmPassword: validateField("confirmPassword", confirmPassword),
+    };
+
+    setErrors(newErrors);
+
+    return (
+      !newErrors.name &&
+      !newErrors.email &&
+      !newErrors.password &&
+      !newErrors.confirmPassword
+    );
+  };
 
   // Lógica de registro
   const handleRegister = async () => {
-    // Validación campos vacíos
-    if (!name || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Todos los campos son obligatorios");
-      return;
-    }
-
-    // Validación contraseñas iguales
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Las contraseñas no coinciden");
-      return;
-    }
-
-    // Validación longitud mínima
-    if (password.length < 6) {
-      Alert.alert("Error", "La contraseña debe tener mínimo 6 caracteres");
-      return;
-    }
+    if (!validate()) return;
 
     setLoading(true);
+
     try {
-      // Crea usuario en Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password,
       );
 
-      // Guarda el nombre en el perfil
       await updateProfile(userCredential.user, {
         displayName: name,
       });
 
-      // Navega a la app principal
       router.replace("/(tabs)");
     } catch (error) {
-      Alert.alert("Error", error.message);
+      console.log(error.code);
+
+      if (error.code === "auth/email-already-in-use") {
+        setErrors((prev) => ({
+          ...prev,
+          email: "El correo ya está en uso",
+        }));
+      } else if (error.code === "auth/invalid-email") {
+        setErrors((prev) => ({
+          ...prev,
+          email: "Correo inválido",
+        }));
+      } else if (error.code === "auth/weak-password") {
+        setErrors((prev) => ({
+          ...prev,
+          password: "Contraseña demasiado débil",
+        }));
+      }
     } finally {
       setLoading(false);
     }
@@ -99,7 +149,14 @@ export default function Register() {
             label="Nombre de usuario"
             placeholder="NombreDeUsuario24"
             value={name}
-            onChangeText={setName}
+            onChangeText={(text) => {
+              setName(text);
+              setErrors((prev) => ({
+                ...prev,
+                name: validateField("name", text),
+              }));
+            }}
+            error={errors.name}
             icon={
               <Ionicons
                 name="person-outline"
@@ -115,7 +172,14 @@ export default function Register() {
             label="Correo electrónico"
             placeholder="hola@jardin.com"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              setErrors((prev) => ({
+                ...prev,
+                email: validateField("email", text),
+              }));
+            }}
+            error={errors.email}
             icon={
               <Ionicons
                 name="mail-outline"
@@ -131,14 +195,14 @@ export default function Register() {
             label="Contraseña"
             placeholder="••••••••"
             value={password}
-            onChangeText={setPassword}
-            icon={
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color={COLORS.onSurfaceVariant}
-              />
-            }
+            onChangeText={(text) => {
+              setPassword(text);
+              setErrors((prev) => ({
+                ...prev,
+                password: validateField("password", text),
+              }));
+            }}
+            error={errors.password}
             secureTextEntry
           />
 
@@ -147,14 +211,14 @@ export default function Register() {
             label="Confirmar contraseña"
             placeholder="••••••••"
             value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            icon={
-              <Ionicons
-                name="lock-open-outline"
-                size={20}
-                color={COLORS.onSurfaceVariant}
-              />
-            }
+            onChangeText={(text) => {
+              setConfirmPassword(text);
+              setErrors((prev) => ({
+                ...prev,
+                confirmPassword: validateField("confirmPassword", text),
+              }));
+            }}
+            error={errors.confirmPassword}
             secureTextEntry
           />
 

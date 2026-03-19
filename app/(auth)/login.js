@@ -26,33 +26,106 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({
+    email: "",
+    password: "",
+  });
+
+  const validateField = (name, value) => {
+    if (name === "email") {
+      if (!value) return "El correo es obligatorio";
+      if (!/\S+@\S+\.\S+/.test(value)) return "Correo inválido";
+    }
+
+    if (name === "password") {
+      if (!value) return "La contraseña es obligatoria";
+    }
+
+    return "";
+  };
+
+  const validate = () => {
+    const emailError = validateField("email", email);
+    const passwordError = validateField("password", password);
+
+    setErrors({
+      email: emailError,
+      password: passwordError,
+    });
+
+    return !emailError && !passwordError;
+  };
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Debes llenar todos los campos");
-      return;
-    }
+    if (!validate()) return;
+
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.replace("/(tabs)");
     } catch (error) {
-      Alert.alert("Error", "Correo o contraseña incorrectos");
+      console.log("Firebase error:", error.code);
+
+      if (error.code === "auth/user-not-found") {
+        setErrors((prev) => ({
+          ...prev,
+          email: "El usuario no existe",
+        }));
+      } else if (error.code === "auth/wrong-password") {
+        setErrors((prev) => ({
+          ...prev,
+          password: "Contraseña incorrecta",
+        }));
+      } else if (error.code === "auth/invalid-email") {
+        setErrors((prev) => ({
+          ...prev,
+          email: "Correo inválido",
+        }));
+      } else if (error.code === "auth/invalid-credential") {
+        setErrors({
+          email: "Correo o contraseña incorrectos",
+          password: "Correo o contraseña incorrectos",
+        });
+      } else {
+        // fallback
+        setErrors((prev) => ({
+          ...prev,
+          password: "Error al iniciar sesión",
+        }));
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleForgotPassword = async () => {
-    if (!email) {
-      Alert.alert("Error", "Ingresa tu correo primero");
+    const emailError = validateField("email", email);
+
+    if (emailError) {
+      setErrors((prev) => ({
+        ...prev,
+        email: emailError,
+      }));
       return;
     }
+
     try {
       await sendPasswordResetEmail(auth, email);
+
       Alert.alert("Enviado", "Revisa tu correo para recuperar tu contraseña");
     } catch (error) {
-      Alert.alert("Error", "No se pudo enviar el correo");
+      let message = "No se pudo enviar el correo";
+
+      if (error.code === "auth/invalid-email") {
+        message = "Correo inválido";
+      } else if (error.code === "auth/user-not-found") {
+        message = "El usuario no existe";
+      }
+
+      setErrors((prev) => ({
+        ...prev,
+        email: message,
+      }));
     }
   };
 
@@ -86,7 +159,15 @@ export default function Login() {
             label="Usuario o Correo electrónico"
             placeholder="ejemplo@plantify.com"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+
+              setErrors((prev) => ({
+                ...prev,
+                email: validateField("email", text),
+              }));
+            }}
+            error={errors.email}
             icon={
               <Ionicons
                 name="person-outline"
@@ -108,15 +189,16 @@ export default function Login() {
             <Input
               placeholder="••••••••"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+
+                setErrors((prev) => ({
+                  ...prev,
+                  password: validateField("password", text),
+                }));
+              }}
               secureTextEntry
-              icon={
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={20}
-                  color={COLORS.onSurfaceVariant}
-                />
-              }
+              error={errors.password}
             />
           </View>
 

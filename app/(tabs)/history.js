@@ -1,3 +1,7 @@
-export default function Screen() {
-  return null;
+export default function history() {
+  return (
+    <View>
+      <Text>Contenido</Text>
+    </View>
+  );
 }

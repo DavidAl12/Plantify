@@ -12,13 +12,23 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: "Inicio",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="leaf" size={size} color={color} />
+            <Ionicons name="home" size={size} color={color} />
           ),
         }}
       />
 
+        <Tabs.Screen
+          name="garden"
+          options={{
+            title: "Mi Jardín",
+            tabBarIcon: ({ color, size }) => (
+                <Ionicons name="leaf" size={size} color={color} />
+            ),
+          }}
+        />
+    
       <Tabs.Screen
         name="calendar"
         options={{

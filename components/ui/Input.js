@@ -49,6 +49,8 @@ export default function Input({
           keyboardType={keyboardType}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          underlineColorAndroid="transparent"
+          keyboardAppearance="light"
         />
 
         {/* Icono derecho (solo password) */}

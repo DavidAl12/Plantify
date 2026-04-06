@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import AppHeader from "../../components/ui/AppHeader";
 import { auth } from "../../src/config/firebase";
 import { COLORS } from "../../styles/colors";
 
@@ -34,11 +35,7 @@ export default function Profile() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Plantify</Text>
-        <Ionicons name="notifications-outline" size={24} />
-      </View>
+      <AppHeader />
 
       {/* Perfil */}
       <View style={styles.profileCard}>

@@ -23,9 +23,31 @@ export default function AddPlant() {
       const user = auth.currentUser;
       if (!user) return;
 
+      const watering = Number(frequency) || 3;
+
       await addDoc(collection(db, "users", user.uid, "plants"), {
         name,
-        wateringFrequencyDays: Number(frequency) || null,
+
+        // 💧 riego
+        wateringFrequencyDays: watering,
+        lastWatered: new Date(),
+
+        // 🌱 NUEVO
+        carePlan: {
+          fertilizing: {
+            frequencyDays: 30,
+            lastDate: new Date(),
+          },
+          pruning: {
+            frequencyDays: 60,
+            lastDate: new Date(),
+          },
+          pest_control: {
+            frequencyDays: 15,
+            lastDate: new Date(),
+          },
+        },
+
         createdAt: serverTimestamp(),
       });
 

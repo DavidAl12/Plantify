@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,101 +9,203 @@ import {
   View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
+
 import AppHeader from "../../components/ui/AppHeader";
 import { COLORS } from "../../styles/colors";
 
+import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
+import { auth, db } from "../../src/config/firebase";
+
+import { generateFullSchedule } from "../../src/utils/calendarUtils";
+
+const TASK_COLORS = {
+  watering: "#4FC3F7",
+  fertilizing: "#b38575ff",
+  pruning: "#81C784",
+  pest_control: "#ffb34fff",
+};
+
+const formatDatePretty = (dateStr) => {
+  if (!dateStr) return "";
+
+  const date = new Date(dateStr);
+
+  return date.toLocaleDateString("es-CO", {
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+  });
+};
+
 export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState("");
+  const [plants, setPlants] = useState([]);
+  const [completedTasks, setCompletedTasks] = useState([]);
+  const [schedule, setSchedule] = useState({});
 
-  // 🔥 TAREAS DE EJEMPLO (luego puedes traerlas de Firebase)
-  const [tasks, setTasks] = useState({
-    "2026-04-06": [
-      {
-        id: 1,
-        title: "Regar planta",
-        subtitle: "Sala • 200ml",
-        done: false,
-      },
-      {
-        id: 2,
-        title: "Revisar hojas",
-        subtitle: "Balcón",
-        done: true,
-      },
-    ],
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    setSelectedDate(today);
+  }, []);
+
+  // 🌱 Cargar plantas
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const ref = collection(db, "users", user.uid, "plants");
+
+    const unsubscribe = onSnapshot(ref, (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setPlants(data);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // ✅ Cargar tareas completadas
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const ref = collection(db, "users", user.uid, "tasks");
+
+    const unsubscribe = onSnapshot(ref, (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setCompletedTasks(data);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Generar calendario dinámico
+  useEffect(() => {
+    const generated = generateFullSchedule(plants, completedTasks);
+    setSchedule(generated);
+  }, [plants, completedTasks]);
+
+  // Marcar días
+  const markedDates = {};
+
+  Object.keys(schedule).forEach((date) => {
+    const tasks = schedule[date];
+
+    const uniqueTypes = [...new Set(tasks.map((t) => t.type))];
+
+    markedDates[date] = {
+      dots: uniqueTypes.map((type) => ({
+        key: type,
+        color: TASK_COLORS[type],
+      })),
+    };
   });
 
-  // 🔥 MARCAR COMPLETADO
-  const toggleTask = (date, id) => {
-    const updated = tasks[date].map((task) =>
-      task.id === id ? { ...task, done: !task.done } : task,
-    );
+  if (selectedDate) {
+    markedDates[selectedDate] = {
+      ...markedDates[selectedDate],
+      selected: true,
+      selectedColor: COLORS.primary,
+    };
+  }
 
-    setTasks({ ...tasks, [date]: updated });
+  const selectedTasks = schedule[selectedDate] || [];
+
+  // ✅ Toggle check
+  const toggleTask = async (task) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const ref = doc(db, "users", user.uid, "tasks", task.id);
+
+    await setDoc(ref, {
+      ...task,
+      date: selectedDate,
+      completed: !task.completed,
+    });
   };
 
-  const selectedTasks = tasks[selectedDate] || [];
+  // 🏷️ Etiquetas bonitas
+  const getTaskLabel = (task) => {
+    const labels = {
+      watering: "💧 Regar",
+      fertilizing: "🌿 Fertilizar",
+      pruning: "✂️ Podar",
+      pest_control: "🐛 Control plagas",
+    };
+
+    return `${labels[task.type] || "🌱"} ${task.name}`;
+  };
 
   return (
     <ScrollView style={styles.container}>
       <AppHeader />
 
-      {/* RESUMEN */}
       <View style={styles.banner}>
-        <Text style={styles.bannerLabel}>Schedule</Text>
         <Text style={styles.bannerTitle}>Calendario</Text>
         <Text style={styles.bannerText}>
-          Selecciona un día para ver tus tareas
+          Aquí puedes ver cuándo tus plantas necesitan atención. ¡No olvides
+          mantén tu jardín siempre saludable!
         </Text>
       </View>
 
-      {/* CALENDARIO */}
       <Calendar
+        markingType="multi-dot"
         onDayPress={(day) => setSelectedDate(day.dateString)}
-        markedDates={{
-          [selectedDate]: {
-            selected: true,
-            selectedColor: COLORS.primary,
-          },
-        }}
+        markedDates={markedDates}
         theme={{
           todayTextColor: COLORS.primary,
           arrowColor: COLORS.primary,
+          //MES Y AÑO
+          monthTextColor: COLORS.primary,
+          textMonthFontWeight: "bold",
+          // DÍAS DE SEMANA
+          textSectionTitleColor: "#000",
         }}
       />
 
-      {/* TAREAS */}
       <View style={styles.tasksSection}>
-        <Text style={styles.tasksTitle}>
-          {selectedDate ? `Tareas - ${selectedDate}` : "Selecciona un día"}
-        </Text>
+        <View style={styles.tasksHeader}>
+          <Text style={styles.tasksTitle}>Tareas Diarias</Text>
+
+          <View style={styles.dateBadge}>
+            <Text style={styles.dateBadgeText}>
+              {formatDatePretty(selectedDate)}
+            </Text>
+          </View>
+        </View>
 
         {selectedTasks.length === 0 ? (
-          <Text style={styles.noTasks}>No hay tareas para este día</Text>
+          <Text style={styles.noTasks}>No hay tareas programadas</Text>
         ) : (
           selectedTasks.map((task) => (
-            <TouchableOpacity
-              key={task.id}
-              style={[styles.taskCard, task.done && styles.taskDone]}
-              onPress={() => toggleTask(selectedDate, task.id)}
-            >
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[styles.taskTitle, task.done && styles.taskTextDone]}
-                >
-                  {task.title}
-                </Text>
-                <Text style={styles.taskSubtitle}>{task.subtitle}</Text>
+            <View key={task.id} style={styles.taskCard}>
+              <View style={styles.taskLeft}>
+                {task.image && (
+                  <Image
+                    source={{ uri: task.image }}
+                    style={styles.taskImage}
+                  />
+                )}
+
+                <Text style={styles.taskTitle}>{getTaskLabel(task)}</Text>
               </View>
 
-              <View
-                style={[styles.checkbox, task.done && styles.checkboxActive]}
-              >
-                {task.done && (
-                  <Ionicons name="checkmark" size={16} color="#fff" />
-                )}
-              </View>
-            </TouchableOpacity>
+              <TouchableOpacity onPress={() => toggleTask(task)}>
+                <Ionicons
+                  name={task.completed ? "checkmark-circle" : "ellipse-outline"}
+                  size={26}
+                  color={task.completed ? COLORS.primary : "gray"}
+                />
+              </TouchableOpacity>
+            </View>
           ))
         )}
       </View>
@@ -117,18 +220,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
 
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.onSurface,
-  },
-
   banner: {
     backgroundColor: COLORS.primaryContainer,
     padding: 20,
@@ -136,29 +227,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  bannerLabel: {
-    fontSize: 12,
-    opacity: 0.7,
-  },
-
+  bannerLabel: { fontSize: 12, opacity: 0.7 },
   bannerTitle: {
     fontSize: 22,
     fontWeight: "bold",
+    color: COLORS.onPrimary,
   },
+  bannerText: { fontSize: 12, color: COLORS.onPrimary },
 
-  bannerText: {
-    fontSize: 12,
-  },
+  tasksSection: { marginTop: 20 },
 
-  tasksSection: {
-    marginTop: 20,
-  },
-
-  tasksTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
+  rginBottom: 10,
 
   noTasks: {
     color: COLORS.onSurfaceVariant,
@@ -166,6 +245,7 @@ const styles = StyleSheet.create({
 
   taskCard: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
     borderRadius: 12,
@@ -173,35 +253,40 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  taskDone: {
-    opacity: 0.5,
-  },
-
-  taskTitle: {
-    fontWeight: "bold",
-    color: COLORS.onSurface,
-  },
-
-  taskTextDone: {
-    textDecorationLine: "line-through",
-  },
-
-  taskSubtitle: {
-    fontSize: 12,
-    color: COLORS.onSurfaceVariant,
-  },
-
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    justifyContent: "center",
+  tasksHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 10,
   },
 
-  checkboxActive: {
-    backgroundColor: COLORS.primary,
+  taskLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  taskImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+  },
+
+  dateBadge: {
+    backgroundColor: "#bff0b1ff",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+
+  dateBadgeText: {
+    color: "#2E7D32",
+    fontWeight: "600",
+  },
+
+  tasksTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: COLORS.primary,
   },
 });

@@ -1,69 +1,102 @@
-# 🌱 Plantify
+# 🌱 Perflora
 
-Aplicación móvil desarrollada con *React Native (Expo)* para la gestión, seguimiento y cuidado inteligente de plantas.
-
-Plantify permite a los usuarios registrar sus plantas, llevar un control de cuidados (riego, fertilización, poda, etc.), recibir recordatorios automáticos y mantener un historial detallado para mejorar la salud de sus cultivos domésticos.
+Aplicación móvil desarrollada con React Native (Expo) para la gestión inteligente, identificación y cuidado personalizado de plantas.
+Perflora permite a los usuarios registrar sus plantas, hacer seguimiento de cuidados, recibir recomendaciones inteligentes y utilizar herramientas como identificación mediante imagen y contenido informativo automatizado.
 
 ---
 
 ## 📱 Descripción del Proyecto
 
-Plantify nace como una solución digital para personas que desean:
+Perflora es una solución digital enfocada en el cuidado moderno de plantas, que combina:
 
-* Organizar el cuidado de sus plantas.
-* Evitar olvidos en riego o mantenimiento.
-* Llevar un historial estructurado de cada planta.
-* Digitalizar el seguimiento del crecimiento y estado vegetal.
+* Gestion de plantas personales
+* Seguimiento de cuidados (riego, poda, fertilización)
+* Sugerencias inteligentes basadas en datos
+* Identificación de plantas mediante cámara
+* Información enriquecida desde fuentes externas
 
-La aplicación está orientada a usuarios domésticos, estudiantes y personas interesadas en el cuidado de plantas ornamentales o huertas urbanas.
+Está orientada a usuarios domésticos, estudiantes y entusiastas de la jardinería urbana que buscan digitalizar y optimizar el cuidado de sus plantas.
 
 ---
 
 ## 🚀 Tecnologías Utilizadas
 
+### 📱Frontend:
+
 * ⚛ *React Native*
 * 📦 *Expo*
-* 🔥 *Firebase*
+* 🧭 *Expo Router (navegación basada en archivos)*
 
-  * Firebase Authentication
-  * Cloud Firestore
-  * Firebase Storage
-* 🧭 *Expo Router* (estructura de navegación)
-* 🟨 JavaScript (ES6+)
+### 🔥 Backend / Servicios:
+* *Firebase*
+  * *Authentication*
+  * *Cloud Firestore*
+  * *Storage*
+
+### 🌐 Integraciones y APIs:
+* ☁ Cloudinary (gestión de imágenes)
+* 🌍 API de Wikipedia (información de plantas)
+* 🌐 Servicios de traducción automática
+
+### 🧠 Lógica y Arquitectura:
+* JavaScript (ES6+)
+* Arquitectura modular por capas
+* Separación en servicio, utils y dominio
 
 ---
 
 ## 🏗️ Arquitectura del Proyecto
 
-El proyecto sigue una arquitectura modular por capas:
+El proyecto sigue una arquitectura escalable organizada por capas:
 
 ### 1️⃣ Capa de Presentación (UI)
 
-* Pantallas (app/)
-* Componentes reutilizables
+Ubicación: <mark>app/</mark> y <mark>components/</mark>
+* *Navegación con Expo Router*
+* *Pantallas organizadas por modulos:*
+  * *<mark>(auth)</mark> -> Autenticación*
+  * *<mark>(tabs)</mark> -> Navegación principal*
+  * *<mark>plant/</mark> -> Gestión de plantas*
+  * *<mark>onboarding/</mark>*
 * Navegación con Expo Router
+  * *UI (Button, Input, ScreenContainer)*
+  * *Plantas (PlantCard, PlantList)*
+  * *Layout (Header, TabBar)*
 
 ### 2️⃣ Capa de Dominio
-
-* Reglas de negocio
-* Validaciones
-* Lógica relacionada con plantas y cuidados
+Ubicación: <mark>src/domain/</mark>
+* *Reglas de negocio*
+* *Validaciones*
+* *Lógica relacionada con plantas y cuidados*
 
 ### 3️⃣ Capa de Datos
+Ubicación: <mark>src/services/</mark>
+  * *<mark>plantService.js</mark> -> Api plantas*
+  * *<mark>cloudinaryService.js</mark> -> Subida de imágines*
+  * *<mark>wikipediaService.js</mark> -> Obtención de información*
+  * *<mark>translationService.js</mark> -> traducción de contenido* 
 
-* Servicios de Firebase
-* Conexión con Firestore
-* Gestión de autenticación
-* Almacenamiento de imágenes
+---
+## 🌟 Funcionalidades Principales
+* 🔐 Autenticación de usuarios
+* 🌱 Registro y gestión de plantas
+* 📷 Captura e identificación de plantas
+* 🧠 Sugerencias inteligentes de cuidado
+* 📚 Información automática desde Wikipedia
+* 🌍 Traducción de contenido
+* 🖼 Subida de imágenes a la nube
+* 📊 Historial de cuidados
+* 📅 Vista tipo calendario (en desarrollo/mejora)
 
 ---
 
 ## 🔜 Funcionalidades en Desarrollo
 
-* 🔔 Recordatorios con notificaciones
-* 📅 Calendario de cuidados
-* 🌿 Identificación de plantas mediante cámara
-* 📊 Estadísticas de cuidado
+* 🔔 Notificaciones y recordatorios inteligentes
+* 📍 Ubicación en tiempo real para recomendaciones
+* 📊 Estadísticas avanzadas de cuidado
+* 🤖 Mejora del sistema de IA
+* 🌿 Diagnóstico de salud de plantas
 
 ---
 
@@ -72,8 +105,8 @@ El proyecto sigue una arquitectura modular por capas:
 ### 1️⃣ Clonar el repositorio
 
 bash
-git clone https://github.com/DavidAl12/Plantify.git
-cd Plantify
+git clone https://github.com/DavidAl12/Perflora.git
+cd Perflora
 
 
 ### 2️⃣ Instalar dependencias
@@ -107,13 +140,16 @@ bash
 npx expo start
 
 
-Luego escanear el QR con *Expo Go* o ejecutar en emulador Android/iOS.
+Luego: 
+* Escanear el QR con *Expo Go*
+* o ejecutar en emulador Android/iOS.
 
 ---
 
 ## 👨‍💻 Autor
 
-*David Alpala*
-*Catalina Estrada*
+* *Arley David Alpala Benavides*
+* *Catalina Estrada Rivas*
+  
 Estudiantes de Ingeniería de Sistemas
 Universidad Santiago de Cali

@@ -1,7 +1,6 @@
 export const generateFullSchedule = (plants, completedTasks) => {
   const schedule = {};
 
-  const now = new Date();
   const endDate = new Date();
   endDate.setFullYear(endDate.getFullYear() + 1);
 
@@ -10,38 +9,43 @@ export const generateFullSchedule = (plants, completedTasks) => {
       {
         key: "watering",
         frequency: plant.wateringFrequencyDays || 3,
-        lastDate: plant.lastWatered || plant.createdAt,
+        baseDate: plant.lastWatered || plant.createdAt,
       },
       {
         key: "fertilizing",
         frequency: plant.carePlan?.fertilizing?.frequencyDays || 30,
-        lastDate: plant.carePlan?.fertilizing?.lastDate || plant.createdAt,
+        baseDate: plant.carePlan?.fertilizing?.lastDate || plant.createdAt,
       },
       {
         key: "pruning",
         frequency: plant.carePlan?.pruning?.frequencyDays || 60,
-        lastDate: plant.carePlan?.pruning?.lastDate || plant.createdAt,
+        baseDate: plant.carePlan?.pruning?.lastDate || plant.createdAt,
       },
       {
         key: "pest_control",
         frequency: plant.carePlan?.pest_control?.frequencyDays || 15,
-        lastDate: plant.carePlan?.pest_control?.lastDate || plant.createdAt,
+        baseDate: plant.carePlan?.pest_control?.lastDate || plant.createdAt,
       },
     ];
 
     taskTypes.forEach((task) => {
-      if (!task.frequency || !task.lastDate) return;
+      if (!task.frequency || !task.baseDate) return;
 
-      let current = task.lastDate.toDate
-        ? task.lastDate.toDate()
-        : new Date(task.lastDate);
+      // 🔑 Fecha base FIJA (NO se modifica nunca)
+      const start = task.baseDate.toDate
+        ? task.baseDate.toDate()
+        : new Date(task.baseDate);
 
-      if (current < now) current = new Date(now);
+      // 🔑 Generar fechas usando múltiplos (NO acumulativo)
+      let i = 1;
 
-      while (current <= endDate) {
-        current = new Date(current.getTime() + task.frequency * 86400000);
+      while (true) {
+        const nextDate = new Date(start);
+        nextDate.setDate(start.getDate() + i * task.frequency);
 
-        const dateStr = current.toISOString().split("T")[0];
+        if (nextDate > endDate) break;
+
+        const dateStr = nextDate.toISOString().split("T")[0];
 
         if (!schedule[dateStr]) schedule[dateStr] = [];
 
@@ -59,6 +63,8 @@ export const generateFullSchedule = (plants, completedTasks) => {
           type: task.key,
           completed: isCompleted,
         });
+
+        i++;
       }
     });
   });

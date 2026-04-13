@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -38,17 +38,16 @@ const formatDatePretty = (dateStr) => {
 };
 
 export default function CalendarScreen() {
-  const [selectedDate, setSelectedDate] = useState("");
+  // HOY por defecto (SIN useEffect)
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+
   const [plants, setPlants] = useState([]);
   const [completedTasks, setCompletedTasks] = useState([]);
   const [schedule, setSchedule] = useState({});
 
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    setSelectedDate(today);
-  }, []);
-
-  // 🌱 Cargar plantas
+  // Cargar plantas
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -67,7 +66,7 @@ export default function CalendarScreen() {
     return unsubscribe;
   }, []);
 
-  // ✅ Cargar tareas completadas
+  // Cargar tareas completadas
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -86,37 +85,45 @@ export default function CalendarScreen() {
     return unsubscribe;
   }, []);
 
-  // Generar calendario dinámico
+  //Generar calendario SOLO cuando cambian datos reales
   useEffect(() => {
     const generated = generateFullSchedule(plants, completedTasks);
     setSchedule(generated);
   }, [plants, completedTasks]);
 
-  // Marcar días
-  const markedDates = {};
+  // MARCADO OPTIMIZADO (no recalcular en cada render)
+  const markedDates = useMemo(() => {
+    const marks = {};
 
-  Object.keys(schedule).forEach((date) => {
-    const tasks = schedule[date];
+    Object.keys(schedule).forEach((date) => {
+      const tasks = schedule[date];
 
-    const uniqueTypes = [...new Set(tasks.map((t) => t.type))];
+      const uniqueTypes = [...new Set(tasks.map((t) => t.type))];
 
-    markedDates[date] = {
-      dots: uniqueTypes.map((type) => ({
-        key: type,
-        color: TASK_COLORS[type],
-      })),
-    };
-  });
+      marks[date] = {
+        dots: uniqueTypes.map((type) => ({
+          key: type,
+          color: TASK_COLORS[type],
+        })),
+      };
+    });
 
-  if (selectedDate) {
-    markedDates[selectedDate] = {
-      ...markedDates[selectedDate],
-      selected: true,
-      selectedColor: COLORS.primary,
-    };
-  }
+    // mantener selección sin dañar fechas
+    if (selectedDate) {
+      marks[selectedDate] = {
+        ...marks[selectedDate],
+        selected: true,
+        selectedColor: COLORS.primary,
+      };
+    }
 
-  const selectedTasks = schedule[selectedDate] || [];
+    return marks;
+  }, [schedule, selectedDate]);
+
+  // 🔑 tareas del día seleccionado (NO recalcula nada)
+  const selectedTasks = useMemo(() => {
+    return schedule[selectedDate] || [];
+  }, [schedule, selectedDate]);
 
   // ✅ Toggle check
   const toggleTask = async (task) => {
@@ -152,21 +159,19 @@ export default function CalendarScreen() {
         <Text style={styles.bannerTitle}>Calendario</Text>
         <Text style={styles.bannerText}>
           Aquí puedes ver cuándo tus plantas necesitan atención. ¡No olvides
-          mantén tu jardín siempre saludable!
+          mantener tu jardín siempre saludable!
         </Text>
       </View>
 
       <Calendar
         markingType="multi-dot"
-        onDayPress={(day) => setSelectedDate(day.dateString)}
+        onDayPress={(day) => setSelectedDate(day.dateString)} // 🔑 SOLO cambia vista
         markedDates={markedDates}
         theme={{
           todayTextColor: COLORS.primary,
           arrowColor: COLORS.primary,
-          //MES Y AÑO
           monthTextColor: COLORS.primary,
           textMonthFontWeight: "bold",
-          // DÍAS DE SEMANA
           textSectionTitleColor: "#000",
         }}
       />
@@ -227,17 +232,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  bannerLabel: { fontSize: 12, opacity: 0.7 },
   bannerTitle: {
     fontSize: 22,
     fontWeight: "bold",
     color: COLORS.onPrimary,
   },
-  bannerText: { fontSize: 12, color: COLORS.onPrimary },
 
-  tasksSection: { marginTop: 20 },
+  bannerText: {
+    fontSize: 12,
+    color: COLORS.onPrimary,
+  },
 
-  rginBottom: 10,
+  tasksSection: {
+    marginTop: 20,
+  },
 
   noTasks: {
     color: COLORS.onSurfaceVariant,

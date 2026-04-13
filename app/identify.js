@@ -17,7 +17,6 @@ import { uploadToCloudinary } from "../src/services/cloudinaryService";
 import { identifyPlantFromBase64 } from "../src/services/plantService";
 import { traducirDetalles } from "../src/services/translationService";
 import { getWikipediaImage } from "../src/services/wikipediaService";
-import { estimateWateringDays } from "../src/utils/plantUtils";
 
 // ─── Componentes ──────────────────────────────────────────────────────────────
 import ProgressBar from "../src/components/ProgressBar";
@@ -144,9 +143,26 @@ export default function IdentifyScreen() {
         toxicity:              details.toxicity || "",
         propagation:           details.propagation_methods || [],
         imageUrl,
-        wateringFrequencyDays: estimateWateringDays(details.best_watering || ""),
-        createdAt:             serverTimestamp(),
+        wateringFrequencyDays: selected.carePlan?.watering || 3,        createdAt:             serverTimestamp(),
         lastWatered:           serverTimestamp(),
+
+        carePlan: {
+          fertilizing: {
+            frequencyDays: selected.carePlan?.fertilizing || 30,
+            lastDate: serverTimestamp(),
+          },
+          pruning: {
+            frequencyDays: selected.carePlan?.pruning || 60,
+            lastDate: serverTimestamp(),
+          },
+          pest_control: {
+            frequencyDays: selected.carePlan?.pest_control || 15,
+            lastDate: serverTimestamp(),
+          },
+
+            createdAt: serverTimestamp(),
+            lastWatered: serverTimestamp(),
+},
       });
 
       router.replace("/(tabs)");

@@ -1,29 +1,42 @@
 const PLANT_ID_KEY = "zIMciTaQoPoHdut1rzXW5lEGIWK8y30OyibI05e9Ltanb6HhRU";
 
 const generateCarePlanFromAPI = (plant) => {
-  const wateringText = plant.details?.best_watering?.toLowerCase() || "";
-  const light = plant.details?.best_light_condition?.toLowerCase() || "";
+  const wateringText =
+    plant.details?.best_watering?.toLowerCase() || "";
 
-  let wateringFrequency = 3;
+  let wateringFrequency = 5; // valor base más realista
 
-  if (wateringText.includes("frecuente")) wateringFrequency = 2;
-  else if (wateringText.includes("moderado")) wateringFrequency = 4;
-  else if (wateringText.includes("poco")) wateringFrequency = 7;
-
-  let fertilizingFrequency = 30;
-  if (light.includes("mucha luz")) fertilizingFrequency = 20;
-
-  let pruningFrequency = 60;
-  if (light.includes("pleno sol")) pruningFrequency = 30;
-
-  let pestFrequency = 15;
-  if (wateringFrequency <= 2) pestFrequency = 10;
+  // patrones más reales
+  if (
+    wateringText.includes("frecuente") ||
+    wateringText.includes("mantener húmedo") ||
+    wateringText.includes("suelo húmedo")
+  ) {
+    wateringFrequency = 2;
+  } else if (
+    wateringText.includes("regular") ||
+    wateringText.includes("moderado")
+  ) {
+    wateringFrequency = 4;
+  } else if (
+    wateringText.includes("poco") ||
+    wateringText.includes("ocasional") ||
+    wateringText.includes("seco") ||
+    wateringText.includes("dejar secar")
+  ) {
+    wateringFrequency = 7;
+  } else if (
+    wateringText.includes("cactus") ||
+    wateringText.includes("suculenta")
+  ) {
+    wateringFrequency = 10;
+  }
 
   return {
     watering: wateringFrequency,
-    fertilizing: fertilizingFrequency,
-    pruning: pruningFrequency,
-    pest_control: pestFrequency,
+    fertilizing: 30,
+    pruning: 60,
+    pest_control: 15,
   };
 };
 

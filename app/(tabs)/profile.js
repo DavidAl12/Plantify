@@ -166,13 +166,23 @@ function MenuItem({ icon, title, subtitle, isOpen, onPress, children }) {
 
 function PersonalInfo({ user }) {
   const [name, setName] = useState(user?.displayName || "");
+  const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
 
   const handleSave = async () => {
     if (!auth.currentUser) return;
 
-    await updateProfile(auth.currentUser, {
-      displayName: name,
-    });
+    try {
+      await updateProfile(auth.currentUser, {
+        displayName: name,
+      });
+
+      setIsError(false);
+      setMessage("Nombre actualizado correctamente");
+    } catch (error) {
+      setIsError(true);
+      setMessage("Error al actualizar el nombre");
+    }
   };
 
   return (
@@ -186,16 +196,42 @@ function PersonalInfo({ user }) {
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
         <Text style={{ color: "white" }}>Guardar</Text>
       </TouchableOpacity>
+      {message !== "" && (
+        <Text style={{ color: isError ? "red" : "green", marginTop: 5 }}>
+          {message}
+        </Text>
+      )}
     </View>
   );
 }
 
 function SecuritySection() {
   const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
 
   const handleChangePassword = async () => {
     if (!auth.currentUser) return;
-    await updatePassword(auth.currentUser, password);
+
+    try {
+      await updatePassword(auth.currentUser, password);
+
+      setIsError(false);
+      setMessage("Contraseña actualizada correctamente");
+      setPassword("");
+    } catch (error) {
+      setIsError(true);
+
+      let msg = "Error al actualizar la contraseña";
+
+      if (error.code === "auth/weak-password") {
+        msg = "Mínimo 6 caracteres";
+      } else if (error.code === "auth/requires-recent-login") {
+        msg = "Debes iniciar sesión otra vez";
+      }
+
+      setMessage(msg);
+    }
   };
 
   return (
@@ -211,6 +247,11 @@ function SecuritySection() {
       <TouchableOpacity style={styles.saveBtn} onPress={handleChangePassword}>
         <Text style={{ color: "white" }}>Actualizar</Text>
       </TouchableOpacity>
+      {message !== "" && (
+        <Text style={{ color: isError ? "red" : "green", marginTop: 5 }}>
+          {message}
+        </Text>
+      )}
     </View>
   );
 }

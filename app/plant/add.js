@@ -1,3 +1,4 @@
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useState } from "react";
@@ -27,12 +28,9 @@ export default function AddPlant() {
 
       await addDoc(collection(db, "users", user.uid, "plants"), {
         name,
-
-        // 💧 riego
         wateringFrequencyDays: watering,
         lastWatered: new Date(),
 
-        // 🌱 NUEVO
         carePlan: {
           fertilizing: {
             frequencyDays: 30,
@@ -57,6 +55,49 @@ export default function AddPlant() {
     }
   };
 
+  // ✅ FUNCIÓN GALERÍA CORRECTA
+  const pickImage = async () => {
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (permission.status !== "granted") {
+        alert("Se necesita permiso para acceder a la galería");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, // ✅ compatible con tu versión
+        quality: 0.3,
+        base64: true,
+      });
+
+      if (!result.canceled) {
+        const asset = result.assets[0];
+
+        // ✅ VALIDACIÓN
+        if (!asset.base64 || asset.base64.length < 1000) {
+          alert("Imagen no válida, intenta con otra");
+          return;
+        }
+
+        // 🔍 DEBUG
+        console.log("Base64 tamaño:", asset.base64.length);
+
+        // 🚀 ENVÍO
+        router.push({
+          pathname: "/camera",
+          params: {
+            imageUri: asset.uri,
+            imageBase64: asset.base64,
+          },
+        });
+      }
+    } catch (error) {
+      console.log("Error seleccionando imagen:", error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* HEADER */}
@@ -75,8 +116,17 @@ export default function AddPlant() {
         </Text>
       </TouchableOpacity>
 
-      {/* SEPARADOR */}
-      <Text style={styles.or}>o agregar manualmente</Text>
+      {/* BOTÓN GALERÍA */}
+      <TouchableOpacity
+        style={[styles.cameraCard, { marginTop: 15 }]}
+        onPress={pickImage}
+      >
+        <Text style={styles.cameraIcon}>🖼️</Text>
+        <Text style={styles.cameraTitle}>Subir desde galería</Text>
+        <Text style={styles.cameraSubtitle}>
+          Selecciona una imagen desde tu dispositivo
+        </Text>
+      </TouchableOpacity>
 
       {/* FORM */}
       <View style={styles.form}>
@@ -144,16 +194,11 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 
-  or: {
-    textAlign: "center",
-    marginVertical: 20,
-    color: "#888",
-  },
-
   form: {
     backgroundColor: "white",
     padding: 20,
     borderRadius: 20,
+    marginTop: 20,
   },
 
   label: {

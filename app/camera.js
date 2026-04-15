@@ -1,6 +1,6 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -14,6 +14,17 @@ export default function CameraScreen() {
   const [loading, setLoading] = useState(false);
   const cameraRef = useRef(null);
   const router = useRouter();
+
+const { imageUri, imageBase64 } = useLocalSearchParams();
+
+        useEffect(() => {
+          if (imageUri) {
+            router.replace({
+              pathname: "/identify",
+              params: { imageUri, imageBase64 },
+            });
+          }
+        }, [imageUri]);
 
   if (!permission) return <View />;
 
@@ -33,9 +44,6 @@ export default function CameraScreen() {
     setLoading(true);
 
     try {
-      // ✅ FIX: quality 0.15 era demasiado bajo y causaba mal reconocimiento.
-      // 0.5 = buen balance entre precisión de Plant.id y tamaño del base64.
-      // skipProcessing: false para que Expo corrija orientación automáticamente.
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.5,
         base64: true,

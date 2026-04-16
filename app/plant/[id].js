@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -21,6 +22,33 @@ export default function PlantDetail() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const [plant, setPlant] = useState(null);
+
+  const handleDelete = () => {
+  Alert.alert(
+    "Eliminar planta",
+    "¿Seguro que quieres eliminar esta planta?",
+    [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Eliminar",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const user = auth.currentUser;
+
+            await deleteDoc(
+              doc(db, "users", user.uid, "plants", id)
+            );
+
+            router.replace("/(tabs)/garden");
+          } catch (error) {
+            console.log("Error eliminando:", error);
+          }
+        },
+      },
+    ]
+  );
+};
 
   useEffect(() => {
     const fetchPlant = async () => {
@@ -84,7 +112,13 @@ export default function PlantDetail() {
       {/* CARD FLOTANTE */}
       <View style={styles.infoCard}>
         <Text style={styles.tag}>Planta</Text>
-        <Text style={styles.name}>{plant.name}</Text>
+        <Text style={styles.name}>
+          {plant.commonNames?.[0] || plant.name}
+        </Text>
+
+        <Text style={{ color: "#666", marginTop: 4 }}>
+          {plant.name}
+        </Text>
         <Text style={styles.location}>Interior</Text>
       </View>
 
@@ -112,7 +146,39 @@ export default function PlantDetail() {
           </View>
         </View>
       </View>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Información</Text>
 
+              {plant.description ? (
+                <View style={styles.infoBox}>
+                  <Text style={styles.infoTitle}>📖 Descripción</Text>
+                  <Text style={styles.infoText}>{plant.description}</Text>
+                </View>
+              ) : null}
+
+              {plant.soilType ? (
+                <View style={styles.infoBox}>
+                  <Text style={styles.infoTitle}>🪴 Suelo</Text>
+                  <Text style={styles.infoText}>{plant.soilType}</Text>
+                </View>
+              ) : null}
+
+              {plant.toxicity ? (
+                <View style={styles.infoBox}>
+                  <Text style={styles.infoTitle}>⚠️ Toxicidad</Text>
+                  <Text style={styles.infoText}>{plant.toxicity}</Text>
+                </View>
+              ) : null}
+
+              {plant.propagation?.length ? (
+                <View style={styles.infoBox}>
+                  <Text style={styles.infoTitle}>🌱 Propagación</Text>
+                  <Text style={styles.infoText}>
+                    {plant.propagation.join(", ")}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
       {/* BOTÓN REGAR */}
       <TouchableOpacity style={styles.waterBtn} onPress={handleWater}>
         <Text style={styles.waterText}>💧 Regar hoy</Text>
@@ -137,10 +203,18 @@ export default function PlantDetail() {
         </TouchableOpacity>
       </View>
 
+      <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+        <Text style={styles.deleteText}>Eliminar planta 🗑️</Text>
+      </TouchableOpacity>
+      
       <View style={{ height: 40 }} />
     </ScrollView>
+    
   );
 }
+
+
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f6f8f5" },
@@ -264,4 +338,35 @@ const styles = StyleSheet.create({
     color: "#2e7d32",
     fontWeight: "700",
   },
+
+  infoBox: {
+  backgroundColor: "white",
+  padding: 14,
+  borderRadius: 14,
+  marginBottom: 10,
+},
+
+infoTitle: {
+  fontWeight: "700",
+  marginBottom: 4,
+},
+
+infoText: {
+  color: "#444",
+  lineHeight: 20,
+},
+
+deleteBtn: {
+  marginHorizontal: 20,
+  backgroundColor: "#e53935",
+  padding: 14,
+  borderRadius: 14,
+  alignItems: "center",
+  marginTop: 10,
+},
+
+deleteText: {
+  color: "white",
+  fontWeight: "700",
+},
 });

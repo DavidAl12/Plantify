@@ -53,8 +53,9 @@ export default function History() {
       } else if (task.date === yesterdayStr) {
         label = "AYER";
       } else {
-        // Formato: Lunes, 26 de abr
-        const date = new Date(task.date);
+        // 🔑 Parsear localmente para evitar desfase de 1 día
+        const [year, month, day] = task.date.split("-").map(Number);
+        const date = new Date(year, month - 1, day);
         label = date.toLocaleDateString("es-CO", {
           weekday: "long",
           day: "numeric",

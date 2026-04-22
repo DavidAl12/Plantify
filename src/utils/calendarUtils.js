@@ -31,12 +31,10 @@ export const generateFullSchedule = (plants, completedTasks) => {
     taskTypes.forEach((task) => {
       if (!task.frequency || !task.baseDate) return;
 
-      // 🔑 Fecha base FIJA (NO se modifica nunca)
       const start = task.baseDate.toDate
         ? task.baseDate.toDate()
         : new Date(task.baseDate);
 
-      // 🔑 Generar fechas usando múltiplos (NO acumulativo)
       let i = 1;
 
       while (true) {
@@ -45,7 +43,11 @@ export const generateFullSchedule = (plants, completedTasks) => {
 
         if (nextDate > endDate) break;
 
-        const dateStr = nextDate.toISOString().split("T")[0];
+        // 🔑 Generar dateStr en tiempo LOCAL para evitar desfases
+        const year = nextDate.getFullYear();
+        const month = String(nextDate.getMonth() + 1).padStart(2, "0");
+        const day = String(nextDate.getDate()).padStart(2, "0");
+        const dateStr = `${year}-${month}-${day}`;
 
         if (!schedule[dateStr]) schedule[dateStr] = [];
 

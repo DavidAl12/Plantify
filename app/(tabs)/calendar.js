@@ -28,7 +28,9 @@ const TASK_COLORS = {
 const formatDatePretty = (dateStr) => {
   if (!dateStr) return "";
 
-  const date = new Date(dateStr);
+  // 🔑 Parsear manualmente para evitar que JS lo trate como UTC
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
 
   return date.toLocaleDateString("es-CO", {
     weekday: "long",
@@ -38,10 +40,14 @@ const formatDatePretty = (dateStr) => {
 };
 
 export default function CalendarScreen() {
-  // HOY por defecto (SIN useEffect)
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0],
-  );
+  // HOY en tiempo LOCAL
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  });
 
   const [plants, setPlants] = useState([]);
   const [completedTasks, setCompletedTasks] = useState([]);

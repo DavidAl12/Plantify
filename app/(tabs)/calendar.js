@@ -17,6 +17,10 @@ import { collection, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/f
 import { auth, db } from "../../src/config/firebase";
 
 import { generateFullSchedule } from "../../src/utils/calendarUtils";
+import { 
+  scheduleAdvanceFertilizationReminders, 
+  scheduleTaskReminders 
+} from "../../src/utils/notificationUtils";
 
 const TASK_COLORS = {
   watering: "#4FC3F7",
@@ -95,6 +99,13 @@ export default function CalendarScreen() {
   useEffect(() => {
     const generated = generateFullSchedule(plants, completedTasks);
     setSchedule(generated);
+
+    // 🔔 Programar notificaciones
+    scheduleTaskReminders(generated);
+    
+    // Programar alertas de fertilización (toda la lista)
+    const allTasks = Object.values(generated).flat();
+    scheduleAdvanceFertilizationReminders(allTasks);
   }, [plants, completedTasks]);
 
   // MARCADO OPTIMIZADO (no recalcular en cada render)

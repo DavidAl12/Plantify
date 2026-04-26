@@ -13,7 +13,7 @@ import { Calendar } from "react-native-calendars";
 import AppHeader from "../../components/ui/AppHeader";
 import { COLORS } from "../../styles/colors";
 
-import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
+import { collection, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "../../src/config/firebase";
 
 import { generateFullSchedule } from "../../src/utils/calendarUtils";
@@ -132,10 +132,13 @@ export default function CalendarScreen() {
 
     const ref = doc(db, "users", user.uid, "tasks", task.id);
 
+    const isCompleting = !task.completed;
+
     await setDoc(ref, {
       ...task,
       date: selectedDate,
-      completed: !task.completed,
+      completed: isCompleting,
+      completedAt: isCompleting ? serverTimestamp() : null,
     });
   };
 

@@ -95,7 +95,7 @@ export default function History() {
       pruning: "Poda",
       pest_control: "Control de plagas",
     };
-    return `${labels[task.type] || "Cuidado"} de ${task.name}`;
+    return `${labels[task.type] || "Cuidado"} de ${task.commonNames?.[0] || task.name}`;
   };
 
   const formatTime = (timestamp) => {

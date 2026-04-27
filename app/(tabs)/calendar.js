@@ -17,9 +17,9 @@ import { collection, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/f
 import { auth, db } from "../../src/config/firebase";
 
 import { generateFullSchedule } from "../../src/utils/calendarUtils";
-import { 
-  scheduleAdvanceFertilizationReminders, 
-  scheduleTaskReminders 
+import {
+  scheduleAdvanceFertilizationReminders,
+  scheduleTaskReminders
 } from "../../src/utils/notificationUtils";
 
 const TASK_COLORS = {
@@ -168,8 +168,16 @@ export default function CalendarScreen() {
       pest_control: "🐛 Control plagas",
     };
 
-    return `${labels[task.type] || "🌱"} ${task.name}`;
+    return `${labels[task.type] || "🌱"} ${getPlantName(task)}`;
   };
+
+    const getPlantName = (task) => {
+      const plant = plants.find((p) => p.id === task.plantId);
+
+      if (!plant) return task.name;
+
+      return plant.commonNames?.[0] || plant.name;
+    };
 
   return (
     <ScrollView style={styles.container}>

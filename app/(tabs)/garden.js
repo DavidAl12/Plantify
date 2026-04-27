@@ -46,9 +46,10 @@ export default function Garden() {
   }, []);
 
   // FILTRO
-  const filteredPlants = plants.filter((p) =>
-    p.name?.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredPlants = plants.filter((p) => {
+  const displayName = p.commonNames?.[0] || p.name || "";
+  return displayName.toLowerCase().includes(search.toLowerCase());
+});
 
   // MÉTRICAS
   const total = plants.length;
@@ -103,7 +104,9 @@ export default function Garden() {
 
         {/* Info */}
         <View style={styles.cardContent}>
-          <Text style={styles.name}>{item.name}</Text>
+          <Text style={styles.name}>
+            {item.commonNames?.[0] || item.name}
+          </Text>
 
           <Text style={styles.subtitle}>
             {necesita

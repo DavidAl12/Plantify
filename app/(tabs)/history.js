@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import AppHeader from "../../components/ui/AppHeader";
 import { auth, db } from "../../src/config/firebase";
 import { COLORS } from "../../styles/colors";
@@ -110,7 +109,7 @@ export default function History() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
+    <View style={{ flex: 1, backgroundColor: COLORS.background }}>
       <AppHeader />
 
       <ScrollView>
@@ -147,7 +146,7 @@ export default function History() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

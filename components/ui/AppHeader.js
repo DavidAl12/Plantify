@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    height: 70, // 🔥 CLAVE: altura fija
+    height: 70,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -78,12 +78,13 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.surfaceContainerLow ?? "#d3ffd2",
+    backgroundColor: "#d3ffd2",
   },
 
   logo: {
-    width: 130, // 🔥 un poquito más grande para consistencia visual
-    height: 45,
+    width: 130,
+    height: 150,
+    resizeMode: "contain",
   },
 
   notifBtn: {
@@ -92,6 +93,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.surfaceContainerLow ?? "#d3ffd2",
+    backgroundColor: "#d3ffd2",
   },
 });

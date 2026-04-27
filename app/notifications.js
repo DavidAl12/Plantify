@@ -8,7 +8,6 @@ import {
     Text,
     View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import AppHeader from "../components/ui/AppHeader";
 import { auth, db } from "../src/config/firebase";
 import { COLORS } from "../styles/colors";
@@ -97,7 +96,7 @@ export default function Notifications() {
   const { today, older } = groupNotifications(notifications);
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <View style={styles.screen}>
       <AppHeader showBack />
 
       <ScrollView
@@ -146,7 +145,7 @@ export default function Notifications() {
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

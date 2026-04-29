@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { deleteDoc, doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, serverTimestamp, updateDoc, collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -9,8 +9,11 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 import { auth, db } from "../../src/config/firebase";
+import { Ionicons } from "@expo/vector-icons";
+import { COLORS } from "../../styles/colors";
 
 const diasDesde = (timestamp) => {
   if (!timestamp) return null;
@@ -22,6 +25,8 @@ export default function PlantDetail() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const [plant, setPlant] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   const handleDelete = () => {
   Alert.alert(
@@ -65,7 +70,31 @@ export default function PlantDetail() {
     };
 
     fetchPlant();
-  }, []);
+  }, [id]);
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user || !id) return;
+
+    const tasksRef = collection(db, "users", user.uid, "tasks");
+    const q = query(
+      tasksRef,
+      where("plantId", "==", id),
+      where("completed", "==", true),
+      orderBy("date", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setHistory(data);
+      setLoadingHistory(false);
+    });
+
+    return unsubscribe;
+  }, [id]);
 
   if (!plant) return null;
 
@@ -203,18 +232,132 @@ export default function PlantDetail() {
         </TouchableOpacity>
       </View>
 
+      {/* HISTORIAL */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Historial de Cuidados</Text>
+        
+        {loadingHistory ? (
+          <ActivityIndicator size="small" color={COLORS.primary} />
+        ) : history.length === 0 ? (
+          <View style={styles.emptyHistory}>
+            <Ionicons name="calendar-outline" size={32} color="#ccc" />
+            <Text style={styles.emptyHistoryText}>Sin actividades aún</Text>
+          </View>
+        ) : (
+          Object.entries(groupTasksByDate(history)).map(([label, tasks]) => (
+            <HistorySection key={label} title={label}>
+              {tasks.map((task) => (
+                <TimelineItem
+                  key={task.id}
+                  icon={getTaskIcon(task.type)}
+                  title={getTaskTitle(task)}
+                  time={formatTime(task.completedAt)}
+                />
+              ))}
+            </HistorySection>
+          ))
+        )}
+      </View>
+
       <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
         <Text style={styles.deleteText}>Eliminar planta 🗑️</Text>
       </TouchableOpacity>
       
       <View style={{ height: 40 }} />
     </ScrollView>
-    
   );
 }
 
+// ─── Componentes Auxiliares ──────────────────────────────────────────────────
 
+function HistorySection({ title, children }) {
+  return (
+    <View style={styles.historySection}>
+      <View style={styles.historyHeader}>
+        <Text style={styles.historyLabel}>{title}</Text>
+        <View style={styles.historyLine} />
+      </View>
+      <View style={styles.historyTimeline}>{children}</View>
+    </View>
+  );
+}
 
+function TimelineItem({ icon, title, time }) {
+  return (
+    <View style={styles.historyItem}>
+      <View style={styles.historyVerticalLine} />
+      <View style={styles.historyDot} />
+      <View style={styles.historyCard}>
+        <View style={styles.historyIconContainer}>
+          <Ionicons name={icon} size={18} color={COLORS.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <View style={styles.historyRowBetween}>
+            <Text style={styles.historyItemTitle}>{title}</Text>
+            <Text style={styles.historyTime}>{time}</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const groupTasksByDate = (tasks) => {
+  const groups = {};
+  const today = new Date().toISOString().split("T")[0];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+  tasks.forEach((task) => {
+    let label = task.date;
+    if (task.date === today) label = "HOY";
+    else if (task.date === yesterdayStr) label = "AYER";
+    else {
+      const [year, month, day] = task.date.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      label = date.toLocaleDateString("es-CO", {
+        day: "numeric",
+        month: "short",
+      }).toUpperCase();
+    }
+    if (!groups[label]) groups[label] = [];
+    groups[label].push(task);
+  });
+  return groups;
+};
+
+const getTaskIcon = (type) => {
+  switch (type) {
+    case "watering": return "water-outline";
+    case "fertilizing": return "flask-outline";
+    case "pruning": return "leaf-outline";
+    case "pest_control": return "bug-outline";
+    default: return "flower-outline";
+  }
+};
+
+const getTaskTitle = (task) => {
+  const labels = {
+    watering: "Riego",
+    fertilizing: "Fertilización",
+    pruning: "Poda",
+    pest_control: "Control de plagas",
+  };
+  return labels[task.type] || "Cuidado";
+};
+
+const formatTime = (timestamp) => {
+  if (!timestamp) return "";
+  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  return date.toLocaleTimeString("es-CO", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f6f8f5" },
@@ -369,4 +512,94 @@ deleteText: {
   color: "white",
   fontWeight: "700",
 },
+
+  // Estilos del Historial
+  historySection: {
+    marginBottom: 15,
+  },
+  historyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  historyLabel: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#888",
+    letterSpacing: 1,
+  },
+  historyLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#eee",
+    marginLeft: 10,
+  },
+  historyTimeline: {
+    paddingLeft: 8,
+  },
+  historyItem: {
+    marginBottom: 15,
+    paddingLeft: 15,
+  },
+  historyVerticalLine: {
+    position: "absolute",
+    left: 4,
+    top: 0,
+    bottom: 0,
+    width: 1,
+    backgroundColor: "#eee",
+  },
+  historyDot: {
+    position: "absolute",
+    left: 0,
+    top: 10,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: COLORS.primary,
+  },
+  historyCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "white",
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+  },
+  historyIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: COLORS.primaryLight,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  historyRowBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  historyItemTitle: {
+    fontWeight: "600",
+    fontSize: 14,
+    color: "#333",
+  },
+  historyTime: {
+    fontSize: 10,
+    color: "#999",
+  },
+  emptyHistory: {
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    marginTop: 10,
+  },
+  emptyHistoryText: {
+    color: "#aaa",
+    fontSize: 12,
+    marginTop: 5,
+  },
 });

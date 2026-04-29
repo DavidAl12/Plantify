@@ -40,11 +40,11 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
-        name="history"
+        name="dashboard"
         options={{
-          title: "Historial",
+          title: "Métricas",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="time" size={size} color={color} />
+            <Ionicons name="stats-chart" size={size} color={color} />
           ),
         }}
       />

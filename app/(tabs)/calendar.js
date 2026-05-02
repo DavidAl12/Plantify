@@ -13,7 +13,7 @@ import { Calendar } from "react-native-calendars";
 import AppHeader from "../../components/ui/AppHeader";
 import { COLORS } from "../../styles/colors";
 
-import { collection, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, doc, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../../src/config/firebase";
 
 import { generateFullSchedule } from "../../src/utils/calendarUtils";
@@ -147,16 +147,29 @@ export default function CalendarScreen() {
     const user = auth.currentUser;
     if (!user) return;
 
-    const ref = doc(db, "users", user.uid, "tasks", task.id);
+    const taskRef = doc(db, "users", user.uid, "tasks", task.id);
+    const plantRef = doc(db, "users", user.uid, "plants", task.plantId);
 
     const isCompleting = !task.completed;
 
-    await setDoc(ref, {
-      ...task,
-      date: selectedDate,
-      completed: isCompleting,
-      completedAt: isCompleting ? serverTimestamp() : null,
-    });
+    try {
+      // 1. Actualizar la tarea
+      await setDoc(taskRef, {
+        ...task,
+        date: selectedDate,
+        completed: isCompleting,
+        completedAt: isCompleting ? serverTimestamp() : null,
+      });
+
+      // 2. Si es riego, sincronizar con el estado de la planta
+      if (task.type === "watering" && isCompleting) {
+        await updateDoc(plantRef, {
+          lastWatered: serverTimestamp(),
+        });
+      }
+    } catch (error) {
+      console.error("Error al sincronizar tarea:", error);
+    }
   };
 
   // 🏷️ Etiquetas bonitas

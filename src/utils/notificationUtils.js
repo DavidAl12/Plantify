@@ -101,7 +101,8 @@ export async function scheduleTaskReminders(schedule) {
         channelId: "default"
       },
       trigger: {
-        seconds: 7200, // Trigger de intervalo (sin 'type' para evitar error)
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 7200,
         repeats: true,
       },
     });
@@ -208,9 +209,9 @@ export async function scheduleDailyTip() {
       channelId: "default"
     },
     trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
       hour: 18,
       minute: 0,
-      repeats: true,
     },
   });
 

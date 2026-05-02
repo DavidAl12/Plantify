@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { deleteDoc, doc, getDoc, serverTimestamp, updateDoc, collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, serverTimestamp, updateDoc, collection, onSnapshot, query, where, orderBy, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import { auth, db } from "../../src/config/firebase";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +28,7 @@ export default function PlantDetail() {
   const [plant, setPlant] = useState(null);
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
 
   const handleDelete = () => {
   Alert.alert(
@@ -102,169 +104,243 @@ export default function PlantDetail() {
 
   const handleWater = async () => {
     const user = auth.currentUser;
+    if (!user || !plant) return;
 
-    await updateDoc(
-      doc(db, "users", user.uid, "plants", id),
-      {
-        lastWatered: serverTimestamp(),
-      }
-    );
+    // 1. Obtener fecha de hoy en formato YYYY-MM-DD
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const todayStr = `${year}-${month}-${day}`;
 
-    setPlant((prev) => ({
-      ...prev,
-      lastWatered: { toDate: () => new Date() },
-    }));
+    // 2. ID determinista para sincronizar con el calendario
+    const taskId = `${id}_watering_${todayStr}`;
+
+    try {
+      // Actualizar la planta
+      await updateDoc(
+        doc(db, "users", user.uid, "plants", id),
+        {
+          lastWatered: serverTimestamp(),
+        }
+      );
+
+      // Crear/Actualizar la tarea como completada para el calendario e historial
+      await setDoc(
+        doc(db, "users", user.uid, "tasks", taskId),
+        {
+          plantId: id,
+          type: "watering",
+          date: todayStr,
+          completed: true,
+          completedAt: serverTimestamp(),
+          name: plant.name,
+          image: plant.imageUrl || null
+        }
+      );
+
+      setPlant((prev) => ({
+        ...prev,
+        lastWatered: { toDate: () => new Date() },
+      }));
+
+      Alert.alert("¡Excelente!", `${plant.commonNames?.[0] || plant.name} ha sido regada.`);
+    } catch (error) {
+      console.error("Error al regar:", error);
+    }
   };
 
+  const lastActivity = history[0];
+
   return (
-    <ScrollView style={styles.container}>
-      {/* HERO */}
-      <View style={styles.hero}>
-        <Image
-          source={{
-            uri:
-              plant.imageUrl ||
-              "https://via.placeholder.com/400x300.png?text=Plant",
-          }}
-          style={styles.image}
-        />
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* HERO */}
+        <View style={styles.hero}>
+          <Image
+            source={{
+              uri:
+                plant.imageUrl ||
+                "https://via.placeholder.com/400x300.png?text=Plant",
+            }}
+            style={styles.image}
+          />
 
-        {/* BACK */}
-        <TouchableOpacity
-          style={styles.back}
-          onPress={() => router.back()}
-        >
-          <Text style={{ color: "white", fontSize: 20 }}>‹</Text>
-        </TouchableOpacity>
-      </View>
+          {/* BACK */}
+          <TouchableOpacity
+            style={styles.back}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
 
-      {/* CARD FLOTANTE */}
-      <View style={styles.infoCard}>
-        <Text style={styles.tag}>Planta</Text>
-        <Text style={styles.name}>
-          {plant.commonNames?.[0] || plant.name}
-        </Text>
-
-        <Text style={{ color: "#666", marginTop: 4 }}>
-          {plant.name}
-        </Text>
-        <Text style={styles.location}>Interior</Text>
-      </View>
-
-      {/* RUTINA */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Rutina de Cuidado</Text>
-
-        <View style={styles.grid}>
-          {/* RIEGO */}
-          <View style={styles.box}>
-            <Text style={styles.icon}>💧</Text>
-            <Text style={styles.label}>Riego</Text>
-            <Text style={styles.value}>
-              Cada {plant.wateringFrequencyDays || 0} días
-            </Text>
-          </View>
-
-          {/* LUZ */}
-          <View style={styles.box}>
-            <Text style={styles.icon}>☀️</Text>
-            <Text style={styles.label}>Luz</Text>
-            <Text style={styles.value}>
-              {plant.light || "Sombra parcial"}
-            </Text>
+        {/* CARD FLOTANTE */}
+        <View style={styles.infoCard}>
+          <View style={styles.rowBetween}>
+            <View>
+               <Text style={styles.tag}>Planta</Text>
+               <Text style={styles.name}>{plant.commonNames?.[0] || plant.name}</Text>
+               <Text style={styles.scientificName}>{plant.name}</Text>
+            </View>
+            <View style={styles.locationBadge}>
+               <Ionicons name="home-outline" size={14} color={COLORS.primary} />
+               <Text style={styles.locationText}>Interior</Text>
+            </View>
           </View>
         </View>
-      </View>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Información</Text>
 
-              {plant.description ? (
-                <View style={styles.infoBox}>
-                  <Text style={styles.infoTitle}>📖 Descripción</Text>
-                  <Text style={styles.infoText}>{plant.description}</Text>
-                </View>
-              ) : null}
-
-              {plant.soilType ? (
-                <View style={styles.infoBox}>
-                  <Text style={styles.infoTitle}>🪴 Suelo</Text>
-                  <Text style={styles.infoText}>{plant.soilType}</Text>
-                </View>
-              ) : null}
-
-              {plant.toxicity ? (
-                <View style={styles.infoBox}>
-                  <Text style={styles.infoTitle}>⚠️ Toxicidad</Text>
-                  <Text style={styles.infoText}>{plant.toxicity}</Text>
-                </View>
-              ) : null}
-
-              {plant.propagation?.length ? (
-                <View style={styles.infoBox}>
-                  <Text style={styles.infoTitle}>🌱 Propagación</Text>
-                  <Text style={styles.infoText}>
-                    {plant.propagation.join(", ")}
-                  </Text>
-                </View>
-              ) : null}
+        {/* RUTINA */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Rutina de Cuidado</Text>
+          <View style={styles.grid}>
+            <View style={styles.box}>
+              <View style={[styles.iconCircle, { backgroundColor: '#e3f2fd' }]}>
+                <Ionicons name="water" size={20} color="#2196f3" />
+              </View>
+              <Text style={styles.label}>Riego</Text>
+              <Text style={styles.value}>Cada {plant.wateringFrequencyDays || 0} días</Text>
             </View>
-      {/* BOTÓN REGAR */}
-      <TouchableOpacity style={styles.waterBtn} onPress={handleWater}>
-        <Text style={styles.waterText}>💧 Regar hoy</Text>
-      </TouchableOpacity>
 
-      {/* IA CARD */}
-      <View style={styles.aiCard}>
-        <Text style={styles.aiTitle}>
-          ¿Algo va mal con {plant.name}?
-        </Text>
-        <Text style={styles.aiText}>
-          Detecta plagas, enfermedades o deficiencias.
-        </Text>
-
-        <TouchableOpacity
-          style={styles.aiButton}
-          onPress={() => router.push("/camera")}
-        >
-          <Text style={styles.aiButtonText}>
-            Detectar problemas
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* HISTORIAL */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Historial de Cuidados</Text>
-        
-        {loadingHistory ? (
-          <ActivityIndicator size="small" color={COLORS.primary} />
-        ) : history.length === 0 ? (
-          <View style={styles.emptyHistory}>
-            <Ionicons name="calendar-outline" size={32} color="#ccc" />
-            <Text style={styles.emptyHistoryText}>Sin actividades aún</Text>
+            <View style={styles.box}>
+              <View style={[styles.iconCircle, { backgroundColor: '#fff3e0' }]}>
+                <Ionicons name="sunny" size={20} color="#ff9800" />
+              </View>
+              <Text style={styles.label}>Luz</Text>
+              <Text style={styles.value}>{plant.light || "Media"}</Text>
+            </View>
           </View>
-        ) : (
-          Object.entries(groupTasksByDate(history)).map(([label, tasks]) => (
-            <HistorySection key={label} title={label}>
-              {tasks.map((task) => (
-                <TimelineItem
-                  key={task.id}
-                  icon={getTaskIcon(task.type)}
-                  title={getTaskTitle(task)}
-                  time={formatTime(task.completedAt)}
-                />
-              ))}
-            </HistorySection>
-          ))
-        )}
-      </View>
+        </View>
 
-      <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-        <Text style={styles.deleteText}>Eliminar planta 🗑️</Text>
-      </TouchableOpacity>
-      
-      <View style={{ height: 40 }} />
-    </ScrollView>
+        {/* HISTORIAL PREVIEW CARD */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Actividad Reciente</Text>
+          <TouchableOpacity 
+            style={styles.historyPreviewCard} 
+            onPress={() => setShowHistory(true)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.historyPreviewLeft}>
+              <View style={styles.historyPreviewIcon}>
+                <Ionicons 
+                  name={lastActivity ? getTaskIcon(lastActivity.type) : "calendar-outline"} 
+                  size={24} 
+                  color={COLORS.primary} 
+                />
+              </View>
+              <View>
+                <Text style={styles.historyPreviewTitle}>
+                  {lastActivity ? `Último: ${getTaskTitle(lastActivity)}` : "Sin actividades"}
+                </Text>
+                <Text style={styles.historyPreviewSubtitle}>
+                  {lastActivity ? `Realizado el ${lastActivity.date}` : "Registra tu primer cuidado"}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#ccc" />
+          </TouchableOpacity>
+        </View>
+
+        {/* INFORMACIÓN */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Información General</Text>
+          {plant.description ? (
+            <View style={styles.infoBox}>
+              <Text style={styles.infoTitle}>📖 Descripción</Text>
+              <Text style={styles.infoText}>{plant.description}</Text>
+            </View>
+          ) : null}
+
+          {plant.soilType ? (
+            <View style={styles.infoBox}>
+              <Text style={styles.infoTitle}>🪴 Suelo Ideal</Text>
+              <Text style={styles.infoText}>{plant.soilType}</Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* BOTÓN REGAR */}
+        <TouchableOpacity style={styles.waterBtn} onPress={handleWater}>
+          <Ionicons name="water" size={20} color="white" style={{ marginRight: 8 }} />
+          <Text style={styles.waterText}>Regar hoy</Text>
+        </TouchableOpacity>
+
+        {/* IA CARD */}
+        <View style={styles.aiCard}>
+          <View style={styles.aiHeader}>
+            <Ionicons name="sparkles" size={24} color="white" />
+            <Text style={styles.aiTitle}>Asistente IA</Text>
+          </View>
+          <Text style={styles.aiText}>
+            ¿Ves manchas u hojas amarillas? Deja que nuestra IA diagnostique a {plant.name}.
+          </Text>
+          <TouchableOpacity
+            style={styles.aiButton}
+            onPress={() => router.push("/camera")}
+          >
+            <Text style={styles.aiButtonText}>Detectar Problemas</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+          <Text style={styles.deleteText}>Eliminar Planta 🗑️</Text>
+        </TouchableOpacity>
+        
+        <View style={{ height: 40 }} />
+      </ScrollView>
+
+      {/* MODAL DE HISTORIAL */}
+      <Modal
+        visible={showHistory}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowHistory(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalBlur} 
+            activeOpacity={1} 
+            onPress={() => setShowHistory(false)} 
+          />
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHandle} />
+              <View style={styles.modalTitleRow}>
+                <Text style={styles.modalTitle}>Historial de Cuidados</Text>
+                <TouchableOpacity onPress={() => setShowHistory(false)}>
+                  <Ionicons name="close-circle" size={28} color="#ccc" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              {loadingHistory ? (
+                <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
+              ) : history.length === 0 ? (
+                <View style={styles.emptyHistoryModal}>
+                  <Ionicons name="calendar-outline" size={64} color="#eee" />
+                  <Text style={styles.emptyHistoryText}>Aún no hay registros para esta planta.</Text>
+                </View>
+              ) : (
+                Object.entries(groupTasksByDate(history)).map(([label, tasks]) => (
+                  <HistorySection key={label} title={label}>
+                    {tasks.map((task) => (
+                      <TimelineItem
+                        key={task.id}
+                        icon={getTaskIcon(task.type)}
+                        title={getTaskTitle(task)}
+                        time={formatTime(task.completedAt)}
+                      />
+                    ))}
+                  </HistorySection>
+                ))
+              )}
+              <View style={{ height: 40 }} />
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
@@ -296,6 +372,7 @@ function TimelineItem({ icon, title, time }) {
             <Text style={styles.historyItemTitle}>{title}</Text>
             <Text style={styles.historyTime}>{time}</Text>
           </View>
+          <Text style={styles.historyDescription}>Tarea completada con éxito.</Text>
         </View>
       </View>
     </View>
@@ -321,6 +398,7 @@ const groupTasksByDate = (tasks) => {
       label = date.toLocaleDateString("es-CO", {
         day: "numeric",
         month: "short",
+        year: "numeric"
       }).toUpperCase();
     }
     if (!groups[label]) groups[label] = [];
@@ -331,11 +409,11 @@ const groupTasksByDate = (tasks) => {
 
 const getTaskIcon = (type) => {
   switch (type) {
-    case "watering": return "water-outline";
-    case "fertilizing": return "flask-outline";
-    case "pruning": return "leaf-outline";
-    case "pest_control": return "bug-outline";
-    default: return "flower-outline";
+    case "watering": return "water";
+    case "fertilizing": return "flask";
+    case "pruning": return "leaf";
+    case "pest_control": return "bug";
+    default: return "flower";
   }
 };
 
@@ -360,246 +438,159 @@ const formatTime = (timestamp) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f6f8f5" },
-
-  hero: { height: 300 },
-  image: { width: "100%", height: 300 },
-
+  container: { flex: 1, backgroundColor: "#f8faf7" },
+  hero: { height: 350 },
+  image: { width: "100%", height: "100%", borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
   back: {
     position: "absolute",
     top: 50,
     left: 20,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    width: 45,
+    height: 45,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
   },
-
   infoCard: {
     backgroundColor: "white",
-    marginTop: -40,
+    marginTop: -50,
     marginHorizontal: 20,
-    padding: 20,
-    borderRadius: 20,
+    padding: 25,
+    borderRadius: 25,
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
   },
-
+  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   tag: {
-    backgroundColor: "#dcedc8",
-    alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    marginBottom: 5,
-  },
-
-  name: {
-    fontSize: 22,
-    fontWeight: "800",
-  },
-
-  location: {
-    color: "#888",
-    marginTop: 4,
-  },
-
-  section: {
-    padding: 20,
-  },
-
-  sectionTitle: {
+    backgroundColor: COLORS.primaryLight,
+    color: COLORS.primary,
     fontWeight: "700",
-    marginBottom: 10,
+    fontSize: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+    marginBottom: 8,
+    textTransform: "uppercase"
   },
-
-  grid: {
+  name: { fontSize: 26, fontWeight: "800", color: "#1b1b1b" },
+  scientificName: { fontSize: 14, fontStyle: "italic", color: "#888", marginTop: 2 },
+  locationBadge: {
     flexDirection: "row",
-    gap: 10,
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 4
   },
-
+  locationText: { fontSize: 11, fontWeight: "600", color: "#666" },
+  section: { padding: 20, paddingTop: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: "700", color: "#1b1b1b", marginBottom: 15 },
+  grid: { flexDirection: "row", gap: 15 },
   box: {
     flex: 1,
     backgroundColor: "white",
-    padding: 16,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-
-  icon: { fontSize: 20 },
-
-  label: {
-    fontSize: 12,
-    color: "#888",
-    marginTop: 4,
-  },
-
-  value: {
-    fontWeight: "700",
-    marginTop: 4,
-  },
-
-  waterBtn: {
-    marginHorizontal: 20,
-    backgroundColor: "#2e7d32",
-    padding: 16,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-
-  waterText: {
-    color: "white",
-    fontWeight: "700",
-  },
-
-  aiCard: {
-    backgroundColor: "#2e7d32",
-    margin: 20,
     padding: 20,
     borderRadius: 20,
-  },
-
-  aiTitle: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-
-  aiText: {
-    color: "#dcedc8",
-    marginTop: 6,
-  },
-
-  aiButton: {
-    backgroundColor: "white",
-    marginTop: 15,
-    padding: 12,
-    borderRadius: 12,
     alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
   },
-
-  aiButtonText: {
-    color: "#2e7d32",
-    fontWeight: "700",
-  },
-
-  infoBox: {
-  backgroundColor: "white",
-  padding: 14,
-  borderRadius: 14,
-  marginBottom: 10,
-},
-
-infoTitle: {
-  fontWeight: "700",
-  marginBottom: 4,
-},
-
-infoText: {
-  color: "#444",
-  lineHeight: 20,
-},
-
-deleteBtn: {
-  marginHorizontal: 20,
-  backgroundColor: "#e53935",
-  padding: 14,
-  borderRadius: 14,
-  alignItems: "center",
-  marginTop: 10,
-},
-
-deleteText: {
-  color: "white",
-  fontWeight: "700",
-},
-
-  // Estilos del Historial
-  historySection: {
-    marginBottom: 15,
-  },
-  historyHeader: {
-    flexDirection: "row",
+  iconCircle: {
+    width: 45,
+    height: 45,
+    borderRadius: 22,
+    justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
   },
-  historyLabel: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#888",
-    letterSpacing: 1,
-  },
-  historyLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#eee",
-    marginLeft: 10,
-  },
-  historyTimeline: {
-    paddingLeft: 8,
-  },
-  historyItem: {
-    marginBottom: 15,
-    paddingLeft: 15,
-  },
-  historyVerticalLine: {
-    position: "absolute",
-    left: 4,
-    top: 0,
-    bottom: 0,
-    width: 1,
-    backgroundColor: "#eee",
-  },
-  historyDot: {
-    position: "absolute",
-    left: 0,
-    top: 10,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: COLORS.primary,
-  },
-  historyCard: {
+  label: { fontSize: 12, color: "#888", fontWeight: "600" },
+  value: { fontWeight: "800", color: "#333", marginTop: 4 },
+  historyPreviewCard: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
     backgroundColor: "white",
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
+    padding: 15,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "space-between",
+    elevation: 2,
   },
-  historyIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+  historyPreviewLeft: { flexDirection: "row", alignItems: "center", gap: 15 },
+  historyPreviewIcon: {
+    width: 45,
+    height: 45,
+    borderRadius: 15,
     backgroundColor: COLORS.primaryLight,
     justifyContent: "center",
     alignItems: "center",
   },
-  historyRowBetween: {
+  historyPreviewTitle: { fontWeight: "700", fontSize: 15, color: "#333" },
+  historyPreviewSubtitle: { fontSize: 12, color: "#888", marginTop: 2 },
+  infoBox: { backgroundColor: "white", padding: 20, borderRadius: 20, marginBottom: 15, elevation: 1 },
+  infoTitle: { fontWeight: "700", fontSize: 15, color: COLORS.primary, marginBottom: 8 },
+  infoText: { color: "#555", lineHeight: 22, fontSize: 14 },
+  waterBtn: {
+    marginHorizontal: 20,
+    backgroundColor: COLORS.primary,
+    padding: 18,
+    borderRadius: 20,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
   },
-  historyItemTitle: {
-    fontWeight: "600",
-    fontSize: 14,
-    color: "#333",
+  waterText: { color: "white", fontWeight: "700", fontSize: 16 },
+  aiCard: {
+    backgroundColor: COLORS.primary,
+    margin: 20,
+    padding: 25,
+    borderRadius: 25,
+    elevation: 5,
   },
-  historyTime: {
-    fontSize: 10,
-    color: "#999",
+  aiHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
+  aiTitle: { color: "white", fontSize: 18, fontWeight: "800" },
+  aiText: { color: "rgba(255,255,255,0.8)", lineHeight: 22, fontSize: 14, marginBottom: 20 },
+  aiButton: { backgroundColor: "white", padding: 15, borderRadius: 15, alignItems: "center" },
+  aiButtonText: { color: COLORS.primary, fontWeight: "800" },
+  deleteBtn: { marginTop: 20, alignItems: "center", padding: 20 },
+  deleteText: { color: "#ff8a80", fontWeight: "600", fontSize: 14 },
+
+  // MODAL STYLES
+  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" },
+  modalBlur: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
+  modalContent: {
+    backgroundColor: "white",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    height: "80%",
+    padding: 25,
+    elevation: 20,
   },
-  emptyHistory: {
-    alignItems: "center",
-    padding: 20,
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    marginTop: 10,
-  },
-  emptyHistoryText: {
-    color: "#aaa",
-    fontSize: 12,
-    marginTop: 5,
-  },
+  modalHeader: { alignItems: "center", marginBottom: 20 },
+  modalHandle: { width: 40, height: 5, backgroundColor: "#eee", borderRadius: 10, marginBottom: 20 },
+  modalTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%" },
+  modalTitle: { fontSize: 22, fontWeight: "800", color: "#1b1b1b" },
+  modalScroll: { flex: 1 },
+  historySection: { marginBottom: 25 },
+  historyHeader: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
+  historyLabel: { fontSize: 11, fontWeight: "800", color: "#aaa", letterSpacing: 1 },
+  historyLine: { flex: 1, height: 1, backgroundColor: "#f0f0f0", marginLeft: 15 },
+  historyTimeline: { paddingLeft: 10 },
+  historyItem: { marginBottom: 20, paddingLeft: 20 },
+  historyVerticalLine: { position: "absolute", left: 4, top: 0, bottom: 0, width: 2, backgroundColor: "#f0f0f0" },
+  historyDot: { position: "absolute", left: -1, top: 12, width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.primary, borderWidth: 2, borderColor: "white" },
+  historyCard: { backgroundColor: "#f9fbf9", padding: 15, borderRadius: 20, flexDirection: "row", gap: 15, alignItems: "center" },
+  historyIconContainer: { width: 40, height: 40, borderRadius: 12, backgroundColor: "white", justifyContent: "center", alignItems: "center", elevation: 1 },
+  historyRowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  historyItemTitle: { fontWeight: "700", fontSize: 15, color: "#333" },
+  historyTime: { fontSize: 11, color: "#999" },
+  historyDescription: { fontSize: 12, color: "#777", marginTop: 4 },
+  emptyHistoryModal: { alignItems: "center", justifyContent: "center", marginTop: 100, opacity: 0.5 },
+  emptyHistoryText: { color: "#888", marginTop: 15, textAlign: "center" },
 });

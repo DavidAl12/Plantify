@@ -2,18 +2,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
+    onAuthStateChanged,
+    sendPasswordResetEmail,
+    signInWithEmailAndPassword,
 } from "firebase/auth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
@@ -30,6 +31,16 @@ export default function Login() {
     email: "",
     password: "",
   });
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.replace("/(tabs)");
+      }
+    });
+
+    return unsubscribe;
+  }, [router]);
 
   const validateField = (name, value) => {
     if (name === "email") {

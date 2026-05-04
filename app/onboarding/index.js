@@ -1,10 +1,23 @@
 // app/onboarding/index.js
 import { useRouter } from "expo-router";
+import { onAuthStateChanged } from "firebase/auth";
+import { useEffect } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { auth } from "../../src/config/firebase";
 import { COLORS } from "../../styles/colors";
 
 export default function Onboarding() {
   const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.replace("/(tabs)");
+      }
+    });
+
+    return unsubscribe;
+  }, [router]);
 
   return (
     <View style={styles.container}>

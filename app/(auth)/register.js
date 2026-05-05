@@ -1,15 +1,19 @@
 // app/(auth)/register.js
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { useState } from "react";
 import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    createUserWithEmailAndPassword,
+    onAuthStateChanged,
+    updateProfile,
+} from "firebase/auth";
+import { useEffect, useState } from "react";
+import {
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
@@ -31,6 +35,16 @@ export default function Register() {
     password: "",
     confirmPassword: "",
   });
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.replace("/(tabs)");
+      }
+    });
+
+    return unsubscribe;
+  }, [router]);
 
   const validateField = (name, value) => {
     switch (name) {

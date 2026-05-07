@@ -102,51 +102,62 @@ export default function PlantDetail() {
 
   const dias = diasDesde(plant.lastWatered);
 
-  const handleWater = async () => {
+  const performActivity = async (type) => {
     const user = auth.currentUser;
     if (!user || !plant) return;
 
-    // 1. Obtener fecha de hoy en formato YYYY-MM-DD
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const day = String(now.getDate()).padStart(2, "0");
     const todayStr = `${year}-${month}-${day}`;
 
-    // 2. ID determinista para sincronizar con el calendario
-    const taskId = `${id}_watering_${todayStr}`;
+    const taskId = `${id}_${type}_${todayStr}`;
 
     try {
-      // Actualizar la planta
-      await updateDoc(
-        doc(db, "users", user.uid, "plants", id),
-        {
-          lastWatered: serverTimestamp(),
+      const updateData = {};
+      if (type === "watering") {
+        updateData.lastWatered = serverTimestamp();
+      } else {
+        updateData[`carePlan.${type}.lastDate`] = serverTimestamp();
+      }
+
+      await updateDoc(doc(db, "users", user.uid, "plants", id), updateData);
+
+      await setDoc(doc(db, "users", user.uid, "tasks", taskId), {
+        plantId: id,
+        type,
+        date: todayStr,
+        completed: true,
+        completedAt: serverTimestamp(),
+        name: plant.name,
+        image: plant.imageUrl || null
+      });
+
+      setPlant((prev) => {
+        const newPlant = { ...prev };
+        const simulatedTimestamp = { toDate: () => new Date() };
+        if (type === "watering") {
+          newPlant.lastWatered = simulatedTimestamp;
+        } else {
+          if (!newPlant.carePlan) newPlant.carePlan = {};
+          if (!newPlant.carePlan[type]) newPlant.carePlan[type] = {};
+          newPlant.carePlan[type].lastDate = simulatedTimestamp;
         }
-      );
+        return newPlant;
+      });
 
-      // Crear/Actualizar la tarea como completada para el calendario e historial
-      await setDoc(
-        doc(db, "users", user.uid, "tasks", taskId),
-        {
-          plantId: id,
-          type: "watering",
-          date: todayStr,
-          completed: true,
-          completedAt: serverTimestamp(),
-          name: plant.name,
-          image: plant.imageUrl || null
-        }
-      );
+      const labels = {
+        watering: "Riego",
+        fertilizing: "Fertilización",
+        pruning: "Poda",
+        pest_control: "Control de plagas"
+      };
 
-      setPlant((prev) => ({
-        ...prev,
-        lastWatered: { toDate: () => new Date() },
-      }));
-
-      Alert.alert("¡Excelente!", `${plant.commonNames?.[0] || plant.name} ha sido regada.`);
+      Alert.alert("¡Excelente!", `${labels[type]} registrado correctamente para ${plant.commonNames?.[0] || plant.name}.`);
     } catch (error) {
-      console.error("Error al regar:", error);
+      console.error(`Error al registrar ${type}:`, error);
+      Alert.alert("Error", "No se pudo registrar la actividad.");
     }
   };
 
@@ -190,10 +201,11 @@ export default function PlantDetail() {
           </View>
         </View>
 
-        {/* RUTINA */}
+        {/* RUTINA DE CUIDADO (4 PILARES) */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Rutina de Cuidado</Text>
           <View style={styles.grid}>
+            {/* RIEGO */}
             <View style={styles.box}>
               <View style={[styles.iconCircle, { backgroundColor: '#e3f2fd' }]}>
                 <Ionicons name="water" size={20} color="#2196f3" />
@@ -202,17 +214,77 @@ export default function PlantDetail() {
               <Text style={styles.value}>Cada {plant.wateringFrequencyDays || 0} días</Text>
             </View>
 
+            {/* FERTILIZACIÓN */}
+            <View style={styles.box}>
+              <View style={[styles.iconCircle, { backgroundColor: '#efebe9' }]}>
+                <Ionicons name="flask" size={20} color="#b38575" />
+              </View>
+              <Text style={styles.label}>Abono</Text>
+              <Text style={styles.value}>Cada {plant.carePlan?.fertilizing?.frequencyDays || 30} días</Text>
+            </View>
+          </View>
+
+          <View style={[styles.grid, { marginTop: 15 }]}>
+            {/* PODA */}
+            <View style={styles.box}>
+              <View style={[styles.iconCircle, { backgroundColor: '#e8f5e9' }]}>
+                <Ionicons name="leaf" size={20} color="#4caf50" />
+              </View>
+              <Text style={styles.label}>Poda</Text>
+              <Text style={styles.value}>Cada {plant.carePlan?.pruning?.frequencyDays || 60} días</Text>
+            </View>
+
+            {/* CONTROL DE PLAGAS */}
             <View style={styles.box}>
               <View style={[styles.iconCircle, { backgroundColor: '#fff3e0' }]}>
-                <Ionicons name="sunny" size={20} color="#ff9800" />
+                <Ionicons name="bug" size={20} color="#ff9800" />
               </View>
-              <Text style={styles.label}>Luz</Text>
-              <Text style={styles.value}>{plant.light || "Media"}</Text>
+              <Text style={styles.label}>Plagas</Text>
+              <Text style={styles.value}>Cada {plant.carePlan?.pest_control?.frequencyDays || 21} días</Text>
             </View>
           </View>
         </View>
 
+        {/* REALIZAR AHORA */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Realizar Ahora</Text>
+          <View style={styles.quickActionRow}>
+            {/* RIEGO */}
+            <TouchableOpacity style={styles.quickActionBtn} onPress={() => performActivity('watering')}>
+              <View style={[styles.quickActionCircle, { backgroundColor: '#e3f2fd' }]}>
+                <Ionicons name="water" size={24} color="#2196f3" />
+              </View>
+              <Text style={styles.quickActionLabel}>Regar</Text>
+            </TouchableOpacity>
+
+            {/* FERTILIZACIÓN */}
+            <TouchableOpacity style={styles.quickActionBtn} onPress={() => performActivity('fertilizing')}>
+              <View style={[styles.quickActionCircle, { backgroundColor: '#efebe9' }]}>
+                <Ionicons name="flask" size={24} color="#b38575" />
+              </View>
+              <Text style={styles.quickActionLabel}>Abonar</Text>
+            </TouchableOpacity>
+
+            {/* PODA */}
+            <TouchableOpacity style={styles.quickActionBtn} onPress={() => performActivity('pruning')}>
+              <View style={[styles.quickActionCircle, { backgroundColor: '#e8f5e9' }]}>
+                <Ionicons name="leaf" size={24} color="#4caf50" />
+              </View>
+              <Text style={styles.quickActionLabel}>Podar</Text>
+            </TouchableOpacity>
+
+            {/* PLAGAS */}
+            <TouchableOpacity style={styles.quickActionBtn} onPress={() => performActivity('pest_control')}>
+              <View style={[styles.quickActionCircle, { backgroundColor: '#fff3e0' }]}>
+                <Ionicons name="bug" size={24} color="#ff9800" />
+              </View>
+              <Text style={styles.quickActionLabel}>Plagas</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* HISTORIAL PREVIEW CARD */}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actividad Reciente</Text>
           <TouchableOpacity 
@@ -244,23 +316,32 @@ export default function PlantDetail() {
         {/* INFORMACIÓN */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Información General</Text>
+          
+          <View style={styles.infoGrid}>
+            <View style={styles.infoBoxHalf}>
+              <Text style={styles.infoTitle}>☀️ Luz</Text>
+              <Text style={styles.infoText}>{plant.light || "Media"}</Text>
+            </View>
+            {plant.soilType ? (
+              <View style={styles.infoBoxHalf}>
+                <Text style={styles.infoTitle}>🪴 Suelo</Text>
+                <Text style={styles.infoText}>{plant.soilType}</Text>
+              </View>
+            ) : null}
+          </View>
+
           {plant.description ? (
-            <View style={styles.infoBox}>
+            <View style={[styles.infoBox, { marginTop: 15 }]}>
               <Text style={styles.infoTitle}>📖 Descripción</Text>
               <Text style={styles.infoText}>{plant.description}</Text>
             </View>
           ) : null}
-
-          {plant.soilType ? (
-            <View style={styles.infoBox}>
-              <Text style={styles.infoTitle}>🪴 Suelo Ideal</Text>
-              <Text style={styles.infoText}>{plant.soilType}</Text>
-            </View>
-          ) : null}
         </View>
 
+
         {/* BOTÓN REGAR */}
-        <TouchableOpacity style={styles.waterBtn} onPress={handleWater}>
+        <TouchableOpacity style={styles.waterBtn} onPress={() => performActivity('watering')}>
+
           <Ionicons name="water" size={20} color="white" style={{ marginRight: 8 }} />
           <Text style={styles.waterText}>Regar hoy</Text>
         </TouchableOpacity>
@@ -532,9 +613,33 @@ const styles = StyleSheet.create({
   },
   historyPreviewTitle: { fontWeight: "700", fontSize: 15, color: "#333" },
   historyPreviewSubtitle: { fontSize: 12, color: "#888", marginTop: 2 },
+  quickActionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 25,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+  },
+  quickActionBtn: { alignItems: "center", gap: 8 },
+  quickActionCircle: {
+    width: 55,
+    height: 55,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quickActionLabel: { fontSize: 10, fontWeight: "700", color: "#666" },
+  infoGrid: { flexDirection: "row", gap: 15 },
+
+  infoBoxHalf: { flex: 1, backgroundColor: "white", padding: 20, borderRadius: 20, elevation: 1 },
   infoBox: { backgroundColor: "white", padding: 20, borderRadius: 20, marginBottom: 15, elevation: 1 },
   infoTitle: { fontWeight: "700", fontSize: 15, color: COLORS.primary, marginBottom: 8 },
   infoText: { color: "#555", lineHeight: 22, fontSize: 14 },
+
   waterBtn: {
     marginHorizontal: 20,
     backgroundColor: COLORS.primary,

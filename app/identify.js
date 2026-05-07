@@ -133,19 +133,19 @@ export default function IdentifyScreen() {
       const details  = selected.details || {};
 
       await addDoc(collection(db, "users", user.uid, "plants"), {
-        name:                  selected.name,
-        commonNames:           details.common_names || [],
-        probability:           selected.probability,
-        description:           details.description?.value || "",
-        watering:              details.best_watering || "",
-        light:                 details.best_light_condition || "",
-        soilType:              details.best_soil_type || "",
-        toxicity:              details.toxicity || "",
-        propagation:           details.propagation_methods || [],
+        name: selected.name,
+        commonNames: details.common_names || [],
+        probability: selected.probability,
+        description: details.description?.value || "",
+        watering: details.best_watering || "",
+        light: details.best_light_condition || "",
+        soilType: details.best_soil_type || "",
+        toxicity: details.toxicity || "",
+        propagation: details.propagation_methods || [],
         imageUrl,
-        wateringFrequencyDays: selected.carePlan?.watering || 3,        createdAt:             serverTimestamp(),
-        lastWatered:           serverTimestamp(),
-
+        wateringFrequencyDays: selected.carePlan?.watering || 5,
+        createdAt: serverTimestamp(),
+        lastWatered: serverTimestamp(),
         carePlan: {
           fertilizing: {
             frequencyDays: selected.carePlan?.fertilizing || 30,
@@ -156,14 +156,12 @@ export default function IdentifyScreen() {
             lastDate: serverTimestamp(),
           },
           pest_control: {
-            frequencyDays: selected.carePlan?.pest_control || 15,
+            frequencyDays: selected.carePlan?.pest_control || 21,
             lastDate: serverTimestamp(),
           },
-
-            createdAt: serverTimestamp(),
-            lastWatered: serverTimestamp(),
-},
+        },
       });
+
 
       router.replace("/(tabs)");
     } catch (err) {

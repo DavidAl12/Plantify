@@ -1,29 +1,29 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-  where,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    onSnapshot,
+    orderBy,
+    query,
+    serverTimestamp,
+    setDoc,
+    updateDoc,
+    where,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
@@ -491,7 +491,15 @@ export default function PlantDetail() {
           </Text>
           <TouchableOpacity
             style={styles.aiButton}
-            onPress={() => router.push("/camera")}
+            onPress={() =>
+              router.push({
+                pathname: "/camera",
+                params: {
+                  mode: "disease",
+                  plantName: plant.name || plant.commonNames?.[0] || "",
+                },
+              })
+            }
           >
             <Text style={styles.aiButtonText}>Detectar Problemas</Text>
           </TouchableOpacity>

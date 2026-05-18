@@ -1,6 +1,6 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -14,17 +14,7 @@ export default function CameraScreen() {
   const [loading, setLoading] = useState(false);
   const cameraRef = useRef(null);
   const router = useRouter();
-
-const { imageUri, imageBase64 } = useLocalSearchParams();
-
-        useEffect(() => {
-          if (imageUri) {
-            router.replace({
-              pathname: "/identify",
-              params: { imageUri, imageBase64 },
-            });
-          }
-        }, [imageUri]);
+  const { mode, plantName } = useLocalSearchParams();
 
   if (!permission) return <View />;
 
@@ -50,12 +40,19 @@ const { imageUri, imageBase64 } = useLocalSearchParams();
         skipProcessing: false,
       });
 
+      const targetPath = mode === "disease" ? "/disease" : "/identify";
+      const params = {
+        imageUri: photo.uri,
+        imageBase64: photo.base64,
+      };
+
+      if (mode === "disease" && plantName) {
+        params.plantName = plantName;
+      }
+
       router.push({
-        pathname: "/identify",
-        params: {
-          imageUri: photo.uri,
-          imageBase64: photo.base64,
-        },
+        pathname: targetPath,
+        params,
       });
     } catch (error) {
       console.error("Error tomando foto:", error);

@@ -2,13 +2,13 @@ import { useRouter } from "expo-router";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import AppHeader from "../../components/ui/AppHeader";
 import { auth, db } from "../../src/config/firebase";
@@ -50,15 +50,6 @@ export default function Garden() {
   const displayName = p.commonNames?.[0] || p.name || "";
   return displayName.toLowerCase().includes(search.toLowerCase());
 });
-
-  // MÉTRICAS
-  const total = plants.length;
-  const needsWater = plants.filter((p) => {
-    const d = diasDesde(p.lastWatered);
-    return p.wateringFrequencyDays && d >= p.wateringFrequencyDays;
-  }).length;
-
-  const healthy = total - needsWater;
 
   // CARD
   const renderItem = ({ item }) => {
@@ -139,26 +130,6 @@ export default function Garden() {
         </TouchableOpacity>
       </View>
 
-      {/* MÉTRICAS */}
-      <View style={styles.metrics}>
-        <View style={styles.metricBox}>
-          <Text style={styles.metricNumber}>{total}</Text>
-          <Text style={styles.metricLabel}>Total</Text>
-        </View>
-
-        <View style={styles.metricBox}>
-          <Text style={styles.metricNumber}>{healthy}</Text>
-          <Text style={styles.metricLabel}>Sanas</Text>
-        </View>
-
-        <View style={styles.metricBox}>
-          <Text style={[styles.metricNumber, { color: "#c62828" }]}>
-            {needsWater}
-          </Text>
-          <Text style={styles.metricLabel}>Cuidado</Text>
-        </View>
-      </View>
-
       {/* LISTA */}
       <FlatList
         data={filteredPlants}
@@ -201,31 +172,6 @@ const styles = StyleSheet.create({
   addText: {
     color: "white",
     fontSize: 22,
-  },
-
-  metrics: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 10,
-    marginTop: 10,
-  },
-
-  metricBox: {
-    backgroundColor: "white",
-    padding: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    width: 90,
-  },
-
-  metricNumber: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-
-  metricLabel: {
-    fontSize: 12,
-    color: "#888",
   },
 
   card: {

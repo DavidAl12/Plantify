@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 
@@ -17,10 +18,6 @@ import { collection, doc, onSnapshot, serverTimestamp, setDoc, updateDoc } from 
 import { auth, db } from "../../src/config/firebase";
 
 import { generateFullSchedule } from "../../src/utils/calendarUtils";
-import {
-  scheduleAdvanceFertilizationReminders,
-  scheduleTaskReminders
-} from "../../src/utils/notificationUtils";
 
 const TASK_COLORS = {
   watering: "#4FC3F7",
@@ -99,13 +96,6 @@ export default function CalendarScreen() {
   useEffect(() => {
     const generated = generateFullSchedule(plants, completedTasks);
     setSchedule(generated);
-
-    // 🔔 Programar notificaciones
-    scheduleTaskReminders(generated);
-    
-    // Programar alertas de fertilización (toda la lista)
-    const allTasks = Object.values(generated).flat();
-    scheduleAdvanceFertilizationReminders(allTasks);
   }, [plants, completedTasks]);
 
   // MARCADO OPTIMIZADO (no recalcular en cada render)
@@ -146,6 +136,13 @@ export default function CalendarScreen() {
   const toggleTask = async (task) => {
     const user = auth.currentUser;
     if (!user) return;
+
+    // Verificar si la fecha seleccionada es futura
+    const today = new Date().toISOString().split('T')[0];
+    if (selectedDate > today) {
+      Alert.alert("No puedes marcar tareas futuras", "Solo puedes marcar tareas para hoy o días anteriores.");
+      return;
+    }
 
     const taskRef = doc(db, "users", user.uid, "tasks", task.id);
     const plantRef = doc(db, "users", user.uid, "plants", task.plantId);
@@ -205,18 +202,27 @@ export default function CalendarScreen() {
           </Text>
         </View>
 
-        <Calendar
-          markingType="multi-dot"
-          onDayPress={(day) => setSelectedDate(day.dateString)}
-          markedDates={markedDates}
-          theme={{
-            todayTextColor: COLORS.primary,
-            arrowColor: COLORS.primary,
-            monthTextColor: COLORS.primary,
-            textMonthFontWeight: "bold",
-            textSectionTitleColor: "#000",
-          }}
-        />
+        <View style={styles.calendarContainer}>
+          <Calendar
+            markingType="multi-dot"
+            onDayPress={(day) => setSelectedDate(day.dateString)}
+            markedDates={markedDates}
+            renderArrow={(direction) => (
+              <Ionicons
+                name={direction === 'left' ? 'chevron-back' : 'chevron-forward'}
+                size={24}
+                color="#555"
+              />
+            )}
+            theme={{
+              todayTextColor: COLORS.primary,
+              arrowColor: "#666",
+              monthTextColor: COLORS.primary,
+              textMonthFontWeight: "bold",
+              textSectionTitleColor: "#000",
+            }}
+          />
+        </View>
 
         <View style={styles.tasksSection}>
           <View style={styles.tasksHeader}>
@@ -233,16 +239,16 @@ export default function CalendarScreen() {
             <Text style={styles.noTasks}>No hay tareas programadas</Text>
           ) : (
             selectedTasks.map((task) => (
-              <View key={task.id} style={styles.taskCard}>
+              <View key={task.id} style={[styles.taskCard, task.completed && styles.taskCardCompleted]}>
                 <View style={styles.taskLeft}>
                   {task.image && (
                     <Image
                       source={{ uri: task.image }}
-                      style={styles.taskImage}
+                      style={[styles.taskImage, task.completed && styles.taskImageCompleted]}
                     />
                   )}
 
-                  <Text style={styles.taskTitle}>{getTaskLabel(task)}</Text>
+                  <Text style={[styles.taskTitle, task.completed && styles.taskTitleCompleted]}>{getTaskLabel(task)}</Text>
                 </View>
 
                 <TouchableOpacity onPress={() => toggleTask(task)}>
@@ -266,7 +272,18 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: "#f4f7f2",
+  },
+
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+
+  calendarContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 20,
   },
 
   banner: {
@@ -301,8 +318,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderRadius: 12,
-    backgroundColor: COLORS.surfaceContainerLowest,
+    backgroundColor: "white",
     marginBottom: 10,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
 
   tasksHeader: {
@@ -324,21 +345,40 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 
+  taskTitle: {
+    fontSize: 16,
+    color: "#1b1b1b",
+    fontWeight: "500",
+  },
+
   dateBadge: {
-    backgroundColor: "#bff0b1ff",
+    backgroundColor: COLORS.primaryLight,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
   },
 
   dateBadgeText: {
-    color: "#2E7D32",
+    color: COLORS.primary,
     fontWeight: "600",
   },
 
   tasksTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
     color: COLORS.primary,
+  },
+
+  taskCardCompleted: {
+    opacity: 0.6,
+  },
+
+  taskImageCompleted: {
+    opacity: 0.6,
+  },
+
+  taskTitleCompleted: {
+    textDecorationLine: 'line-through',
+    color: '#888',
   },
 });

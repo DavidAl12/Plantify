@@ -259,18 +259,11 @@ function SecuritySection() {
 }
 
 function NotificationsSection() {
-  const [enabled, setEnabled] = useState(true);
-
   return (
-    <View>
-      <Text>Recordatorios</Text>
-
-      <TouchableOpacity
-        style={styles.toggle}
-        onPress={() => setEnabled(!enabled)}
-      >
-        <Text>{enabled ? "Activadas" : "Desactivadas"}</Text>
-      </TouchableOpacity>
+    <View style={{ paddingVertical: 10 }}>
+      <Text style={{ color: COLORS.onSurfaceVariant, fontSize: 13 }}>
+        El sistema de recordatorios estará disponible próximamente.
+      </Text>
     </View>
   );
 }
@@ -280,7 +273,7 @@ function NotificationsSection() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: "#f4f7f2",
   },
 
   content: {
@@ -288,11 +281,25 @@ const styles = StyleSheet.create({
   },
 
   profileCard: {
-    backgroundColor: COLORS.surfaceContainerLowest,
+    backgroundColor: "white",
     borderRadius: 20,
     padding: 20,
     alignItems: "center",
     marginBottom: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  avatarContainer: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
   },
 
   avatar: {
@@ -301,45 +308,56 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
 
+  section: {
+    marginBottom: 20,
+  },
+
   name: {
     fontSize: 20,
     fontWeight: "bold",
-    color: COLORS.onSurface,
+    color: "#1b1b1b",
+    marginTop: 12,
   },
 
   email: {
-    color: COLORS.onSurfaceVariant,
+    color: "#888",
+    marginTop: 4,
   },
 
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "bold",
-    color: COLORS.onSurfaceVariant,
-    marginBottom: 10,
+    color: COLORS.primary,
+    marginBottom: 12,
+    marginTop: 8,
   },
 
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    padding: 14,
-    backgroundColor: COLORS.surfaceContainerLowest,
+    gap: 12,
+    padding: 16,
+    backgroundColor: "white",
     borderRadius: 12,
     marginBottom: 10,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
   },
 
   menuIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.secondary,
+    backgroundColor: COLORS.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
 
   dropdown: {
-    padding: 10,
-    backgroundColor: "#fff",
+    padding: 14,
+    backgroundColor: "#f9f9f9",
     borderRadius: 10,
     marginBottom: 10,
   },
@@ -366,31 +384,59 @@ const styles = StyleSheet.create({
 
   stats: {
     flexDirection: "row",
-    gap: 10,
+    gap: 12,
     marginBottom: 20,
   },
 
   cardPrimary: {
     flex: 1,
-    backgroundColor: COLORS.primaryContainer,
+    backgroundColor: "white",
     padding: 16,
     borderRadius: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
   },
 
   cardSecondary: {
     flex: 1,
-    backgroundColor: COLORS.secondaryContainer,
+    backgroundColor: "white",
     padding: 16,
     borderRadius: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    borderLeftWidth: 4,
+    borderLeftColor: "#ff9800",
   },
 
   statNumber: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
+    color: "#1b1b1b",
+    marginTop: 8,
   },
 
   statText: {
     fontSize: 12,
+    color: "#888",
+    marginTop: 4,
+  },
+
+  menuTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1b1b1b",
+  },
+
+  menuSubtitle: {
+    fontSize: 13,
+    color: "#888",
+    marginTop: 2,
   },
 
   iconBg: {
@@ -406,11 +452,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     padding: 14,
+    backgroundColor: "white",
+    borderRadius: 12,
+    marginTop: 10,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
   },
 
   logoutText: {
     color: COLORS.error,
     fontWeight: "bold",
+    fontSize: 16,
   },
 
   version: {

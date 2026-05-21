@@ -28,8 +28,17 @@
     },
     "plugins": [
       "expo-router",
-      "expo-web-browser"
-              ],
+      "expo-web-browser",
+      "expo-updates"
+    ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

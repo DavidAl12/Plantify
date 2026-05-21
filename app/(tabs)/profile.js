@@ -259,11 +259,75 @@ function SecuritySection() {
 }
 
 function NotificationsSection() {
+  return <NotificationsSettings />;
+}
+
+function NotificationsSettings() {
+  const [freq, setFreq] = useState(null); // null = default 5, 'off' = off, number = hours
+  const [saving, setSaving] = useState(false);
+  const options = ["off", 4, 6, 8, 10];
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const NotificationUtils = (await import("../../src/utils/notificationUtils")).default;
+      const current = await NotificationUtils.getSavedFrequency();
+      if (!mounted) return;
+      setFreq(current === null ? null : current);
+    })();
+    return () => (mounted = false);
+  }, []);
+
+  const handleSelect = (v) => setFreq(v);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const NotificationUtils = (await import("../../src/utils/notificationUtils")).default;
+    await NotificationUtils.setSavedFrequency(freq);
+    // Re-schedule notifications with new frequency
+    await NotificationUtils.scheduleNextNotifications().catch(() => {});
+    setSaving(false);
+  };
+
   return (
     <View style={{ paddingVertical: 10 }}>
-      <Text style={{ color: COLORS.onSurfaceVariant, fontSize: 13 }}>
-        El sistema de recordatorios estará disponible próximamente.
+      <Text style={{ color: COLORS.onSurfaceVariant, fontSize: 13, marginBottom: 10 }}>
+        Frecuencia de recordatorios periódicos (predeterminado: 5 horas)
       </Text>
+
+      {options.map((opt) => (
+        <TouchableOpacity
+          key={String(opt)}
+          style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8 }}
+          onPress={() => handleSelect(opt === "off" ? "off" : opt)}
+        >
+          <View
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: 9,
+              borderWidth: 1,
+              borderColor: COLORS.primary,
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 10,
+            }}
+          >
+            {((opt === "off" && freq === "off") || (opt !== "off" && freq === opt)) && (
+              <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.primary }} />
+            )}
+          </View>
+
+          <Text style={{ fontSize: 15 }}>
+            {opt === "off" ? "Desactivar notificaciones" : `${opt} horas`}
+            {opt === 4 && "  "}
+          </Text>
+        </TouchableOpacity>
+      ))}
+
+      <TouchableOpacity style={[styles.saveBtn, { marginTop: 12 }]} onPress={handleSave} disabled={saving}>
+        <Text style={{ color: "white" }}>{saving ? "Guardando..." : "Guardar"}</Text>
+      </TouchableOpacity>
     </View>
   );
 }

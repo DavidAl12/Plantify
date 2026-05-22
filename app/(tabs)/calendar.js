@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
     Alert,
@@ -41,14 +42,22 @@ const formatDatePretty = (dateStr) => {
 };
 
 export default function CalendarScreen() {
-  // HOY en tiempo LOCAL
-  const [selectedDate, setSelectedDate] = useState(() => {
+  const today = (() => {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const day = String(now.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
-  });
+  })();
+
+  const { date: selectedDateParam } = useLocalSearchParams();
+  const [selectedDate, setSelectedDate] = useState(() => selectedDateParam || today);
+
+  useEffect(() => {
+    if (selectedDateParam && selectedDateParam !== selectedDate) {
+      setSelectedDate(selectedDateParam);
+    }
+  }, [selectedDateParam, selectedDate]);
 
   const [plants, setPlants] = useState([]);
   const [completedTasks, setCompletedTasks] = useState([]);

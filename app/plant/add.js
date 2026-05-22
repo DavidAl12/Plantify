@@ -1,26 +1,38 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useState } from "react";
 import {
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppHeader from "../../components/ui/AppHeader";
 import { auth, db } from "../../src/config/firebase";
+import { COLORS } from "../../styles/colors";
+
+const { width } = Dimensions.get("window");
 
 export default function AddPlant() {
   const router = useRouter();
-
+  const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [frequency, setFrequency] = useState("");
 
   const handleSave = async () => {
-    if (!name) return;
+    if (!name) {
+      alert("Por favor ingresa el nombre de la planta");
+      return;
+    }
 
     try {
+      setLoading(true);
       const user = auth.currentUser;
       if (!user) return;
 
@@ -49,9 +61,12 @@ export default function AddPlant() {
         createdAt: serverTimestamp(),
       });
 
+      setLoading(false);
       router.replace("/(tabs)/garden");
     } catch (error) {
+      setLoading(false);
       console.log(error);
+      alert("Error al guardar la planta");
     }
   };
 
@@ -67,7 +82,7 @@ export default function AddPlant() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // ✅ compatible con tu versión
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.3,
         base64: true,
       });
@@ -75,18 +90,15 @@ export default function AddPlant() {
       if (!result.canceled) {
         const asset = result.assets[0];
 
-        // ✅ VALIDACIÓN
         if (!asset.base64 || asset.base64.length < 1000) {
           alert("Imagen no válida, intenta con otra");
           return;
         }
 
-        // 🔍 DEBUG
         console.log("Base64 tamaño:", asset.base64.length);
 
-        // 🚀 ENVÍO
         router.push({
-          pathname: "/camera",
+          pathname: "/identify",
           params: {
             imageUri: asset.uri,
             imageBase64: asset.base64,
@@ -98,59 +110,121 @@ export default function AddPlant() {
     }
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
   return (
     <View style={styles.container}>
-      {/* HEADER */}
-      <Text style={styles.title}>Añadir Planta 🌱</Text>
-
-      {/* CARD CÁMARA */}
-      <TouchableOpacity
-        style={styles.cameraCard}
-        onPress={() => router.push("/camera")}
-        activeOpacity={0.9}
+      <AppHeader />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.cameraIcon}>📷</Text>
-        <Text style={styles.cameraTitle}>Escanear planta</Text>
-        <Text style={styles.cameraSubtitle}>
-          Usa la cámara para identificar automáticamente
-        </Text>
-      </TouchableOpacity>
+        {/* HEADER */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Añadir Planta 🌱</Text>
+          <Text style={styles.subtitle}>
+            Usa la cámara o galería para identificar automáticamente
+          </Text>
+        </View>
 
-      {/* BOTÓN GALERÍA */}
-      <TouchableOpacity
-        style={[styles.cameraCard, { marginTop: 15 }]}
-        onPress={pickImage}
-      >
-        <Text style={styles.cameraIcon}>🖼️</Text>
-        <Text style={styles.cameraTitle}>Subir desde galería</Text>
-        <Text style={styles.cameraSubtitle}>
-          Selecciona una imagen desde tu dispositivo
-        </Text>
-      </TouchableOpacity>
-
-      {/* FORM */}
-      <View style={styles.form}>
-        <Text style={styles.label}>Nombre</Text>
-        <TextInput
-          placeholder="Ej: Monstera deliciosa"
-          value={name}
-          onChangeText={setName}
-          style={styles.input}
-        />
-
-        <Text style={styles.label}>Frecuencia de riego (días)</Text>
-        <TextInput
-          placeholder="Ej: 7"
-          value={frequency}
-          onChangeText={setFrequency}
-          keyboardType="numeric"
-          style={styles.input}
-        />
-
-        <TouchableOpacity style={styles.button} onPress={handleSave}>
-          <Text style={styles.buttonText}>Guardar planta</Text>
+        {/* IMAGEN - MÉTODOS */}
+        <Text style={styles.sectionTitle}>Identificar tu planta</Text>
+        
+        <TouchableOpacity
+          style={styles.imageMethodCard}
+          onPress={() => router.push("/camera")}
+          activeOpacity={0.9}
+        >
+          <View
+            style={[
+              styles.methodIconContainer,
+              { backgroundColor: COLORS.primary + "20" },
+            ]}
+          >
+            <Ionicons name="camera" size={32} color={COLORS.primary} />
+          </View>
+          <View style={styles.methodContent}>
+            <Text style={styles.methodTitle}>Tomar foto</Text>
+            <Text style={styles.methodSubtitle}>
+              Usa la cámara para identificar automáticamente
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color={COLORS.outlineVariant} />
         </TouchableOpacity>
-      </View>
+
+        <TouchableOpacity
+          style={styles.imageMethodCard}
+          onPress={pickImage}
+          activeOpacity={0.9}
+        >
+          <View
+            style={[
+              styles.methodIconContainer,
+              { backgroundColor: COLORS.secondary + "20" },
+            ]}
+          >
+            <Ionicons name="image" size={32} color={COLORS.secondary} />
+          </View>
+          <View style={styles.methodContent}>
+            <Text style={styles.methodTitle}>Galería</Text>
+            <Text style={styles.methodSubtitle}>
+              Selecciona una imagen desde tu dispositivo
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color={COLORS.outlineVariant} />
+        </TouchableOpacity>
+
+        {/* DATOS MANUALES */}
+        <Text style={styles.sectionTitle}>O ingresa manualmente</Text>
+        <View style={styles.formCard}>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Nombre de la planta</Text>
+            <TextInput
+              placeholder="Ej: Monstera deliciosa"
+              placeholderTextColor={COLORS.onSurfaceVariant}
+              value={name}
+              onChangeText={setName}
+              style={styles.input}
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Frecuencia de riego (días)</Text>
+            <TextInput
+              placeholder="Ej: 7"
+              placeholderTextColor={COLORS.onSurfaceVariant}
+              value={frequency}
+              onChangeText={setFrequency}
+              keyboardType="numeric"
+              style={styles.input}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.saveButton,
+              { backgroundColor: COLORS.primary },
+            ]}
+            onPress={handleSave}
+            activeOpacity={0.8}
+          >
+            <Ionicons
+              name="checkmark-circle"
+              size={20}
+              color={COLORS.onPrimary}
+              style={{ marginRight: 8 }}
+            />
+            <Text style={styles.saveButtonText}>Guardar planta</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 20 }} />
+      </ScrollView>
     </View>
   );
 }
@@ -158,72 +232,118 @@ export default function AddPlant() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f6f8f5",
-    padding: 20,
-    paddingTop: 60,
+    backgroundColor: COLORS.background,
   },
-
+  center: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  header: {
+    marginBottom: 30,
+  },
   title: {
-    fontSize: 26,
-    fontWeight: "800",
-    marginBottom: 20,
-    color: "#1a2e1a",
+    fontSize: 28,
+    fontWeight: "bold",
+    color: COLORS.onSurface,
+    marginBottom: 8,
   },
-
-  cameraCard: {
-    backgroundColor: "#2e7d32",
-    padding: 24,
-    borderRadius: 20,
-    alignItems: "center",
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.onSurfaceVariant,
+    lineHeight: 20,
   },
-
-  cameraIcon: {
-    fontSize: 32,
-    marginBottom: 10,
-  },
-
-  cameraTitle: {
-    color: "white",
+  sectionTitle: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "600",
+    color: COLORS.onSurface,
+    marginBottom: 12,
+    marginTop: 20,
   },
-
-  cameraSubtitle: {
-    color: "#dcedc8",
-    textAlign: "center",
-    marginTop: 6,
-  },
-
-  form: {
-    backgroundColor: "white",
-    padding: 20,
+  imageMethodCard: {
+    backgroundColor: COLORS.surfaceWhite,
     borderRadius: 20,
-    marginTop: 20,
-  },
-
-  label: {
-    fontSize: 13,
-    color: "#666",
-    marginBottom: 5,
-    marginTop: 10,
-  },
-
-  input: {
-    backgroundColor: "#f1f1f1",
-    borderRadius: 12,
-    padding: 12,
-  },
-
-  button: {
-    marginTop: 20,
-    backgroundColor: "#2e7d32",
     padding: 16,
-    borderRadius: 14,
+    marginBottom: 12,
+    flexDirection: "row",
     alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
   },
-
-  buttonText: {
-    color: "white",
+  methodIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  methodContent: {
+    flex: 1,
+  },
+  methodTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.onSurface,
+    marginBottom: 4,
+  },
+  methodSubtitle: {
+    fontSize: 12,
+    color: COLORS.onSurfaceVariant,
+    lineHeight: 16,
+  },
+  formCard: {
+    backgroundColor: COLORS.surfaceWhite,
+    borderRadius: 24,
+    padding: 24,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    marginBottom: 20,
+  },
+  formGroup: {
+    marginBottom: 18,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.onSurface,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: COLORS.surfaceContainerLow,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontSize: 14,
+    color: COLORS.onSurface,
+    borderWidth: 1,
+    borderColor: COLORS.outlineVariant,
+  },
+  saveButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    marginTop: 8,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  saveButtonText: {
+    color: COLORS.onPrimary,
     fontWeight: "700",
+    fontSize: 16,
   },
 });

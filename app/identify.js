@@ -241,7 +241,7 @@ export default function IdentifyScreen() {
         {saving ? (
           <ActivityIndicator color="white" />
         ) : (
-          <Text style={styles.saveButtonText}>Guardar "{selected?.name}" 🌿</Text>
+          <Text style={styles.saveButtonText}>Guardar "{details.common_names?.[0] || selected?.name}" 🌿</Text>
         )}
       </TouchableOpacity>
 

@@ -328,8 +328,10 @@ function NotificationsSettings() {
       <TouchableOpacity style={[styles.saveBtn, { marginTop: 12 }]} onPress={handleSave} disabled={saving}>
         <Text style={{ color: "white" }}>{saving ? "Guardando..." : "Guardar"}</Text>
       </TouchableOpacity>
+
     </View>
   );
+
 }
 
 //////////////////// ESTILOS ////////////////////

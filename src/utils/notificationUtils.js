@@ -43,11 +43,22 @@ export async function registerForPushNotificationsAsync() {
     const token = tokenData?.data;
     if (token) await saveNotificationToFirestoreToken(token);
 
-    // Android channel
+    // Android channels
     if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("default", {
-        name: "Default",
+      // Canal principal para notificaciones de tareas
+      await Notifications.setNotificationChannelAsync("tasks", {
+        name: "Tareas de plantas",
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#345d25",
+      });
+
+      // Canal para recordatorios periódicos
+      await Notifications.setNotificationChannelAsync("reminders", {
+        name: "Recordatorios",
         importance: Notifications.AndroidImportance.DEFAULT,
+        vibrationPattern: [0, 200],
+        lightColor: "#345d25",
       });
     }
 
@@ -139,9 +150,19 @@ export async function scheduleNextNotifications(days = 7) {
       if (todaysTasks.length > 0 && isFutureTrigger(dailyTrigger)) {
         await Notifications.scheduleNotificationAsync({
           content: {
-            title: "Recordatorio de actividades",
-            body: `Hoy tienes ${todaysTasks.length} actividades.`,
+            title: "🌱 Tareas de hoy",
+            body: `Tienes ${todaysTasks.length} ${todaysTasks.length === 1 ? "actividad" : "actividades"} pendiente${todaysTasks.length === 1 ? "" : "s"}.`,
             data: { type: "daily_summary", date: dateStr },
+            color: "#345d25",
+            ios: {
+              sound: true,
+            },
+            android: {
+              channelId: "tasks",
+              color: "#345d25",
+              smallIcon: "ic_stat_leaf",
+              priority: "high",
+            },
           },
           trigger: dailyTrigger,
         });
@@ -155,9 +176,19 @@ export async function scheduleNextNotifications(days = 7) {
       if (tomorrowsTasks.length > 0 && isFutureTrigger(advanceTrigger)) {
         await Notifications.scheduleNotificationAsync({
           content: {
-            title: "Actividades para mañana",
-            body: `Mañana tienes ${tomorrowsTasks.length} actividades.`,
+            title: "🌿 Actividades para mañana",
+            body: `Tienes ${tomorrowsTasks.length} ${tomorrowsTasks.length === 1 ? "actividad" : "actividades"} programada${tomorrowsTasks.length === 1 ? "" : "s"}.`,
             data: { type: "advance_summary", date: nextStr },
+            color: "#345d25",
+            ios: {
+              sound: true,
+            },
+            android: {
+              channelId: "tasks",
+              color: "#345d25",
+              smallIcon: "ic_stat_leaf",
+              priority: "high",
+            },
           },
           trigger: advanceTrigger,
         });
@@ -172,11 +203,21 @@ export async function scheduleNextNotifications(days = 7) {
       // schedule a repeating notification every `hours` starting now+hours
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: "Recordatorio",
-          body: "Revisa tus actividades en Perflora.",
+          title: "💧 Recordatorio de Plantify",
+          body: "Revisa tus actividades de plantas.",
           data: { type: "periodic_summary" },
+          color: "#345d25",
+          ios: {
+            sound: false,
+          },
+          android: {
+            channelId: "reminders",
+            color: "#345d25",
+            smallIcon: "ic_stat_leaf",
+            priority: "default",
+          },
         },
-        trigger: { type: "timeInterval", seconds: hours * 3600, repeats: true, channelId: "default" },
+        trigger: { type: "timeInterval", seconds: hours * 3600, repeats: true },
       });
     }
   } catch (e) {
@@ -188,11 +229,21 @@ export async function sendTestNotification() {
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: "Notificación de prueba",
+        title: "🌱 Plantify - Prueba",
         body: "Esta es una notificación de prueba de Plantify.",
         data: { type: "test_notification" },
+        color: "#345d25",
+        ios: {
+          sound: true,
+        },
+        android: {
+          channelId: "tasks",
+          color: "#345d25",
+          smallIcon: "ic_stat_leaf",
+          priority: "high",
+        },
       },
-      trigger: { type: "timeInterval", seconds: 1, repeats: false, channelId: "default" },
+      trigger: { type: "timeInterval", seconds: 1, repeats: false },
     });
   } catch (e) {
     console.log("Error sending test notification:", e);
@@ -214,33 +265,63 @@ export async function sendPlantTaskTestNotification() {
     if (todayTasks.length > 0) {
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: "Recordatorio de planta - hoy",
-          body: `Hoy tienes ${todayTasks.length} actividades de plantas.`,
+          title: "💧 Tareas de hoy",
+          body: `Tienes ${todayTasks.length} ${todayTasks.length === 1 ? "actividad" : "actividades"} de plantas.`,
           data: { type: "daily_summary_test", date: todayStr },
+          color: "#345d25",
+          ios: {
+            sound: true,
+          },
+          android: {
+            channelId: "tasks",
+            color: "#345d25",
+            smallIcon: "ic_stat_leaf",
+            priority: "high",
+          },
         },
-        trigger: { type: "timeInterval", seconds: 5, repeats: false, channelId: "default" },
+        trigger: { type: "timeInterval", seconds: 5, repeats: false },
       });
     }
 
     if (tomorrowTasks.length > 0) {
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: "Recordatorio de planta - mañana",
-          body: `Mañana tienes ${tomorrowTasks.length} actividades de plantas.`,
+          title: "🌿 Tareas para mañana",
+          body: `Tienes ${tomorrowTasks.length} ${tomorrowTasks.length === 1 ? "actividad" : "actividades"} programada${tomorrowTasks.length === 1 ? "" : "s"}.`,
           data: { type: "advance_summary_test", date: tomorrowStr },
+          color: "#345d25",
+          ios: {
+            sound: true,
+          },
+          android: {
+            channelId: "tasks",
+            color: "#345d25",
+            smallIcon: "ic_stat_leaf",
+            priority: "high",
+          },
         },
-        trigger: { type: "timeInterval", seconds: 7, repeats: false, channelId: "default" },
+        trigger: { type: "timeInterval", seconds: 7, repeats: false },
       });
     }
 
     if (todayTasks.length === 0 && tomorrowTasks.length === 0) {
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: "Plantify: prueba de alertas",
-          body: "No hay tareas de plantas para hoy ni mañana. Añade una planta para crear recordatorios.",
+          title: "🌱 Plantify",
+          body: "No hay tareas para hoy ni mañana. Añade una planta para crear recordatorios.",
           data: { type: "plant_task_test" },
+          color: "#345d25",
+          ios: {
+            sound: true,
+          },
+          android: {
+            channelId: "tasks",
+            color: "#345d25",
+            smallIcon: "ic_stat_leaf",
+            priority: "high",
+          },
         },
-        trigger: { type: "timeInterval", seconds: 5, repeats: false, channelId: "default" },
+        trigger: { type: "timeInterval", seconds: 5, repeats: false },
       });
     }
 

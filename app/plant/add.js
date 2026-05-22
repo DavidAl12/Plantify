@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,6 +25,11 @@ export default function AddPlant() {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [frequency, setFrequency] = useState("");
+  const [fertilizing, setFertilizing] = useState("");
+  const [pruning, setPruning] = useState("");
+  const [pest, setPest] = useState("");
+  const [description, setDescription] = useState("");
+  const [manualImageUri, setManualImageUri] = useState(null);
 
   const handleSave = async () => {
     if (!name) {
@@ -37,23 +43,30 @@ export default function AddPlant() {
       if (!user) return;
 
       const watering = Number(frequency) || 3;
+      const fertilizingDays = Number(fertilizing) || 30;
+      const pruningDays = Number(pruning) || 60;
+      const pestDays = Number(pest) || 21;
 
       await addDoc(collection(db, "users", user.uid, "plants"), {
         name,
+        commonNames: [name],
         wateringFrequencyDays: watering,
         lastWatered: new Date(),
+        imageUrl: manualImageUri || null,
+        image: manualImageUri || null,
+        description: description.trim() || null,
 
         carePlan: {
           fertilizing: {
-            frequencyDays: 30,
+            frequencyDays: fertilizingDays,
             lastDate: new Date(),
           },
           pruning: {
-            frequencyDays: 60,
+            frequencyDays: pruningDays,
             lastDate: new Date(),
           },
           pest_control: {
-            frequencyDays: 15,
+            frequencyDays: pestDays,
             lastDate: new Date(),
           },
         },
@@ -67,6 +80,52 @@ export default function AddPlant() {
       setLoading(false);
       console.log(error);
       alert("Error al guardar la planta");
+    }
+  };
+
+  const takeManualPhoto = async () => {
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (permission.status !== "granted") {
+        alert("Se necesita permiso para usar la cámara");
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.6,
+      });
+
+      if (!result.canceled) {
+        const asset = result.assets[0];
+        setManualImageUri(asset.uri);
+      }
+    } catch (error) {
+      console.log("Error tomando foto manual:", error);
+    }
+  };
+
+  const pickManualImage = async () => {
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (permission.status !== "granted") {
+        alert("Se necesita permiso para acceder a la galería");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.6,
+      });
+
+      if (!result.canceled) {
+        const asset = result.assets[0];
+        setManualImageUri(asset.uri);
+      }
+    } catch (error) {
+      console.log("Error seleccionando imagen manual:", error);
     }
   };
 
@@ -180,8 +239,45 @@ export default function AddPlant() {
         </TouchableOpacity>
 
         {/* DATOS MANUALES */}
-        <Text style={styles.sectionTitle}>O ingresa manualmente</Text>
+        <Text style={styles.sectionTitle}>O agrega manualmente</Text>
         <View style={styles.formCard}>
+          <Text style={styles.formNote}>
+            Opcional: agrega una foto para tu planta o llena los datos que conozcas.
+          </Text>
+
+          <View style={styles.imageActionsRow}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={takeManualPhoto}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="camera" size={18} color={COLORS.primary} />
+              <Text style={styles.actionButtonText}>Tomar foto</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={pickManualImage}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="image" size={18} color={COLORS.secondary} />
+              <Text style={styles.actionButtonText}>Galería</Text>
+            </TouchableOpacity>
+          </View>
+
+          {manualImageUri ? (
+            <View style={styles.previewCard}>
+              <Image source={{ uri: manualImageUri }} style={styles.previewImage} />
+              <TouchableOpacity
+                style={styles.removeImageButton}
+                onPress={() => setManualImageUri(null)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.removeImageText}>Eliminar foto</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
           <View style={styles.formGroup}>
             <Text style={styles.label}>Nombre de la planta</Text>
             <TextInput
@@ -202,6 +298,56 @@ export default function AddPlant() {
               onChangeText={setFrequency}
               keyboardType="numeric"
               style={styles.input}
+            />
+          </View>
+
+          <View style={styles.formGroupRow}>
+            <View style={styles.formHalf}>
+              <Text style={styles.label}>Poda (días)</Text>
+              <TextInput
+                placeholder="Ej: 60"
+                placeholderTextColor={COLORS.onSurfaceVariant}
+                value={pruning}
+                onChangeText={setPruning}
+                keyboardType="numeric"
+                style={styles.input}
+              />
+            </View>
+            <View style={styles.formHalf}>
+              <Text style={styles.label}>Abono (días)</Text>
+              <TextInput
+                placeholder="Ej: 30"
+                placeholderTextColor={COLORS.onSurfaceVariant}
+                value={fertilizing}
+                onChangeText={setFertilizing}
+                keyboardType="numeric"
+                style={styles.input}
+              />
+            </View>
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Plagas (días)</Text>
+            <TextInput
+              placeholder="Ej: 21"
+              placeholderTextColor={COLORS.onSurfaceVariant}
+              value={pest}
+              onChangeText={setPest}
+              keyboardType="numeric"
+              style={styles.input}
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Descripción</Text>
+            <TextInput
+              placeholder="Escribe una descripción o notas sobre tu planta"
+              placeholderTextColor={COLORS.onSurfaceVariant}
+              value={description}
+              onChangeText={setDescription}
+              style={[styles.input, styles.textArea]}
+              multiline
+              numberOfLines={4}
             />
           </View>
 
@@ -308,8 +454,67 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     marginBottom: 20,
   },
+  formNote: {
+    color: COLORS.onSurfaceVariant,
+    fontSize: 13,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  imageActionsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 16,
+  },
+  actionButton: {
+    flex: 1,
+    backgroundColor: COLORS.surfaceContainerLow,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  actionButtonText: {
+    color: COLORS.onSurface,
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  previewCard: {
+    marginBottom: 16,
+    borderRadius: 18,
+    overflow: "hidden",
+    backgroundColor: COLORS.surfaceContainerLow,
+  },
+  previewImage: {
+    width: "100%",
+    height: 180,
+  },
+  removeImageButton: {
+    paddingVertical: 12,
+    alignItems: "center",
+    backgroundColor: COLORS.surfaceWhite,
+  },
+  removeImageText: {
+    color: COLORS.error,
+    fontWeight: "700",
+  },
   formGroup: {
     marginBottom: 18,
+  },
+  formGroupRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  formHalf: {
+    flex: 1,
+  },
+  textArea: {
+    minHeight: 100,
+    textAlignVertical: "top",
   },
   label: {
     fontSize: 14,

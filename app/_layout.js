@@ -1,11 +1,26 @@
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import * as Updates from "expo-updates";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import NotificationUtils from "../src/utils/notificationUtils";
 
 export default function RootLayout() {
+  const [appReady, setAppReady] = useState(false);
+
   useEffect(() => {
+    const prepareApp = async () => {
+      try {
+        await SplashScreen.preventAutoHideAsync();
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+      } catch (error) {
+        console.log("SplashScreen error:", error);
+      } finally {
+        setAppReady(true);
+        await SplashScreen.hideAsync();
+      }
+    };
+
     const checkUpdates = async () => {
       if (!__DEV__ && Updates.isEnabled) {
         try {
@@ -20,6 +35,7 @@ export default function RootLayout() {
       }
     };
 
+    prepareApp();
     checkUpdates();
 
     // Registrar para push (solicita permisos si hace falta)
@@ -27,6 +43,10 @@ export default function RootLayout() {
     // Programar próximas notificaciones (se actualizará más tarde desde perfil o cuando sea necesario)
     NotificationUtils.scheduleNextNotifications().catch(() => {});
   }, []);
+
+  if (!appReady) {
+    return null;
+  }
 
   return (
     <SafeAreaProvider>

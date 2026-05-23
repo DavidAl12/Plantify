@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { collection, onSnapshot } from "firebase/firestore";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Image,
   Modal,
@@ -13,70 +13,114 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { auth, db } from "../../src/config/firebase";
-import { generateFullSchedule } from "../../src/utils/calendarUtils";
+import { hasUnviewedNotifications, markNotificationsAsViewed } from "../../src/utils/notificationUtils";
 import { COLORS } from "../../styles/colors";
-
-const TASK_LABELS = {
-  watering: "regar",
-  fertilizing: "fertilizar",
-  pruning: "podar",
-  pest_control: "controlar plagas",
-};
 
 export default function AppHeader({ showBack = false }) {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [plants, setPlants] = useState([]);
-  const [completedTasks, setCompletedTasks] = useState([]);
+  const [notificationHistory, setNotificationHistory] = useState([]);
+  const [hasUnviewed, setHasUnviewed] = useState(false);
 
+  // Cargar historial de notificaciones
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const plantsRef = collection(db, "users", user.uid, "plants");
-    const tasksRef = collection(db, "users", user.uid, "tasks");
-
-    const unsubscribePlants = onSnapshot(plantsRef, (snapshot) => {
-      setPlants(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    });
-
-    const unsubscribeTasks = onSnapshot(tasksRef, (snapshot) => {
-      setCompletedTasks(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    });
-
-    return () => {
-      unsubscribePlants();
-      unsubscribeTasks();
+    const loadHistory = async () => {
+      try {
+        const data = await AsyncStorage.getItem("notificationHistory");
+        if (data) {
+          setNotificationHistory(JSON.parse(data));
+        }
+      } catch (e) {
+        console.log("Error cargando historial:", e);
+      }
     };
+
+    loadHistory();
   }, []);
 
-  const today = useMemo(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+  // Verificar si hay notificaciones sin ver (periodicamente)
+  useEffect(() => {
+    const checkUnviewed = async () => {
+      try {
+        const hasUnviewed = await hasUnviewedNotifications();
+        setHasUnviewed(hasUnviewed);
+      } catch (e) {
+        console.log("Error verificando notificaciones sin ver:", e);
+      }
+    };
+
+    checkUnviewed();
+    const interval = setInterval(checkUnviewed, 2000); // Verificar cada 2 segundos
+
+    return () => clearInterval(interval);
   }, []);
 
-  const todaysTasks = useMemo(() => {
-    const schedule = generateFullSchedule(plants, completedTasks);
-    return (schedule[today] || []).filter((task) => !task.completed);
-  }, [plants, completedTasks, today]);
+  // Cuando se abre el modal, marcar como visto
+  const handleOpenMenu = useCallback(async () => {
+    setIsMenuOpen(true);
+    await markNotificationsAsViewed();
+    setHasUnviewed(false);
+    
+    // Recargar historial
+    try {
+      const data = await AsyncStorage.getItem("notificationHistory");
+      if (data) {
+        setNotificationHistory(JSON.parse(data));
+      }
+    } catch (e) {
+      console.log("Error recargando historial:", e);
+    }
+  }, []);
 
-  const getPlantName = (task) => {
-    const plant = plants.find((p) => p.id === task.plantId);
-    return plant?.commonNames?.[0] || task.name;
+  // Agrupar notificaciones por fecha - SOLO mostrar las que ya llegaron
+  const notificationsByDate = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const grouped = {};
+    
+    notificationHistory
+      .filter((n) => n.data?.type !== "periodic_summary") // Excluir recordatorios periódicos
+      .filter((n) => n.date <= today) // Solo mostrar notificaciones que ya llegaron
+      .forEach((notif) => {
+        const date = notif.date || new Date(notif.timestamp).toISOString().slice(0, 10);
+        if (!grouped[date]) {
+          grouped[date] = [];
+        }
+        grouped[date].push(notif);
+      });
+
+    // Ordenar fechas en orden descendente (más recientes primero)
+    return Object.entries(grouped)
+      .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
+      .reduce((acc, [date, notifs]) => {
+        acc[date] = notifs;
+        return acc;
+      }, {});
+  }, [notificationHistory]);
+
+  const formatDate = (dateStr) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    if (dateStr === today) return { label: "Hoy", type: "today" };
+    if (dateStr === yesterday) return { label: "Ayer", type: "yesterday" };
+
+    const date = new Date(dateStr);
+    const formatted = date.toLocaleDateString("es-ES", {
+      month: "short",
+      day: "numeric",
+    });
+    return { label: formatted, type: "other" };
   };
 
-  const getTaskLabel = (task) => {
-    const action = TASK_LABELS[task.type] || "cuidar";
-    return `Hoy debes de ${action} ${getPlantName(task)}`;
-  };
-
-  const openCalendar = () => {
-    setIsMenuOpen(false);
-    router.push({ pathname: "/(tabs)/calendar", params: { date: today } });
+  // Determinar tipo de notificación
+  const getNotificationType = (notif) => {
+    if (notif.data?.type === "daily_summary" || notif.data?.type === "daily_summary_test") {
+      return "today";
+    }
+    if (notif.data?.type === "advance_summary" || notif.data?.type === "advance_summary_test") {
+      return "tomorrow";
+    }
+    return "other";
   };
 
   return (
@@ -107,7 +151,7 @@ export default function AppHeader({ showBack = false }) {
 
         {/* DERECHA */}
         <TouchableOpacity
-          onPress={() => setIsMenuOpen(true)}
+          onPress={handleOpenMenu}
           activeOpacity={0.7}
           style={styles.notifBtn}
         >
@@ -116,7 +160,7 @@ export default function AppHeader({ showBack = false }) {
             size={22}
             color={COLORS.onSurface}
           />
-          {todaysTasks.length > 0 && (
+          {hasUnviewed && (
             <View style={styles.badge} />
           )}
         </TouchableOpacity>
@@ -133,21 +177,36 @@ export default function AppHeader({ showBack = false }) {
         </TouchableWithoutFeedback>
 
         <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>Tareas para hoy</Text>
-          {todaysTasks.length === 0 ? (
-            <Text style={styles.modalText}>No tienes tareas pendientes para hoy.</Text>
+          <Text style={styles.modalTitle}>Notificaciones</Text>
+          {Object.keys(notificationsByDate).length === 0 ? (
+            <Text style={styles.modalText}>No tienes notificaciones.</Text>
           ) : (
             <ScrollView style={styles.taskList}>
-              {todaysTasks.map((task) => (
-                <TouchableOpacity
-                  key={task.id}
-                  onPress={openCalendar}
-                  activeOpacity={0.7}
-                  style={styles.taskItem}
-                >
-                  <Text style={styles.taskItemText}>{getTaskLabel(task)}</Text>
-                </TouchableOpacity>
-              ))}
+              {Object.entries(notificationsByDate).map(([date, notifs]) => {
+                const dateInfo = formatDate(date);
+                return (
+                  <View key={date} style={styles.dateGroup}>
+                    <Text style={styles.dateLabel}>{dateInfo.label}</Text>
+                    {notifs.map((notif) => {
+                      const notifType = getNotificationType(notif);
+                      return (
+                        <View
+                          key={notif.id}
+                          style={[
+                            styles.notificationItem,
+                            notifType === "today" && styles.notifToday,
+                            notifType === "tomorrow" && styles.notifTomorrow,
+                            notifType === "other" && styles.notifOther,
+                          ]}
+                        >
+                          <Text style={styles.notifTitle}>{notif.title}</Text>
+                          <Text style={styles.notifBody}>{notif.body}</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                );
+              })}
             </ScrollView>
           )}
         </View>
@@ -249,6 +308,54 @@ const styles = StyleSheet.create({
 
   taskList: {
     marginTop: 4,
+  },
+
+  dateGroup: {
+    marginBottom: 12,
+  },
+
+  dateLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: COLORS.primary,
+    marginBottom: 8,
+    marginTop: 8,
+  },
+
+  notificationItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    marginBottom: 6,
+    borderLeftWidth: 4,
+  },
+
+  notifToday: {
+    backgroundColor: "#e8f5e9",
+    borderLeftColor: "#2e7d32",
+  },
+
+  notifTomorrow: {
+    backgroundColor: "#fff8e1",
+    borderLeftColor: "#f57f17",
+  },
+
+  notifOther: {
+    backgroundColor: "#f5f5f5",
+    borderLeftColor: "#9e9e9e",
+  },
+
+  notifTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.onSurface,
+    marginBottom: 4,
+  },
+
+  notifBody: {
+    fontSize: 12,
+    color: "#666",
+    lineHeight: 16,
   },
 
   taskItem: {

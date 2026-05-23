@@ -137,7 +137,7 @@ export default function Profile() {
           <Text style={styles.logoutText}>Cerrar Sesión</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>PLANTIFY APP VERSION 1.0.0</Text>
+        <Text style={styles.version}>PERFLORA APP VERSION 1.0.0</Text>
       </View>
     </ScrollView>
   );
@@ -328,7 +328,6 @@ function NotificationsSettings() {
       <TouchableOpacity style={[styles.saveBtn, { marginTop: 12 }]} onPress={handleSave} disabled={saving}>
         <Text style={{ color: "white" }}>{saving ? "Guardando..." : "Guardar"}</Text>
       </TouchableOpacity>
-
     </View>
   );
 

@@ -47,7 +47,7 @@ export default function Onboarding() {
               Cultiva tu propio Jardin en casa con confianza
             </Text>
             <Text style={styles.description}>
-              Plantify te ayuda a gestionar y cuidar tus plantas con programas
+              Perflora te ayuda a gestionar y cuidar tus plantas con programas
               de riego personalizados y consejos botánicos expertos.
             </Text>
           </View>

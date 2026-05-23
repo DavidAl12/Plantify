@@ -7,14 +7,6 @@
     "icon": "./assets/images/logoApp.png",
     "scheme": "perflora",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#0D0D0D"
-    },
-    
     "ios": {
       "supportsTablet": true
     },
@@ -25,7 +17,6 @@
         "monochromeImage": "./assets/images/logoApp.png",
         "backgroundColor": "#ebffe7"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.arley_col.Perflora"
     },
@@ -36,7 +27,15 @@
     "plugins": [
       "expo-router",
       "expo-web-browser",
-      "expo-updates"
+      "expo-updates",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#0D0D0D"
+        }
+      ]
     ],
     "runtimeVersion": {
       "policy": "appVersion"

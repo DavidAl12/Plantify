@@ -20,6 +20,7 @@ import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import { auth } from "../../src/config/firebase";
 import { COLORS } from "../../styles/colors";
+import { useSocialAuth } from "../../src/hooks/useSocialAuth";
 
 export default function Login() {
   const router = useRouter();
@@ -31,6 +32,12 @@ export default function Login() {
     email: "",
     password: "",
   });
+
+  const {
+    loading: socialLoading,
+    loginWithGoogle,
+    loginWithMicrosoft,
+  } = useSocialAuth();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -217,7 +224,7 @@ export default function Login() {
           <Button
             title="Iniciar Sesión"
             onPress={handleLogin}
-            loading={loading}
+            loading={loading || socialLoading}
           />
 
           {/* Divisor */}
@@ -230,24 +237,40 @@ export default function Login() {
           {/* Botones sociales */}
           <View style={styles.socialColumn}>
             {/* Botón Google */}
-            <TouchableOpacity style={styles.socialButtonWide}>
+            <TouchableOpacity
+              style={[
+                styles.socialButtonWide,
+                (loading || socialLoading) && { opacity: 0.6 }
+              ]}
+              onPress={loginWithGoogle}
+              disabled={loading || socialLoading}
+            >
               <Image
                 source={require("../../assets/images/google-logo.png")}
                 style={styles.socialLogo}
                 resizeMode="contain"
               />
-              <Text style={styles.socialButtonText}>Continuar con Google</Text>
+              <Text style={styles.socialButtonText}>
+                {socialLoading ? "Cargando..." : "Continuar con Google"}
+              </Text>
             </TouchableOpacity>
 
             {/* Botón Microsoft */}
-            <TouchableOpacity style={styles.socialButtonWide}>
+            <TouchableOpacity
+              style={[
+                styles.socialButtonWide,
+                (loading || socialLoading) && { opacity: 0.6 }
+              ]}
+              onPress={loginWithMicrosoft}
+              disabled={loading || socialLoading}
+            >
               <Image
                 source={require("../../assets/images/microsoft-logo.png")}
                 style={styles.socialLogo}
                 resizeMode="contain"
               />
               <Text style={styles.socialButtonText}>
-                Continuar con Microsoft
+                {socialLoading ? "Cargando..." : "Continuar con Microsoft"}
               </Text>
             </TouchableOpacity>
           </View>

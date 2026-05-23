@@ -2,19 +2,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-    onAuthStateChanged,
-    sendPasswordResetEmail,
-    signInWithEmailAndPassword,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
 } from "firebase/auth";
 import { useEffect, useState } from "react";
 import {
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
@@ -168,7 +168,7 @@ export default function Login() {
         <View style={styles.form}>
           <Input
             label="Usuario o Correo electrónico"
-            placeholder="ejemplo@plantify.com"
+            placeholder="ejemplo@perflora.com"
             value={email}
             onChangeText={(text) => {
               setEmail(text);

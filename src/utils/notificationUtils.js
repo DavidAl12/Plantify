@@ -149,18 +149,19 @@ export async function scheduleNextNotifications(days = 7) {
       const todaysTasks = schedule[dateStr] || [];
       const dailyTrigger = scheduleAtLocalTime(target, 9, 0);
       if (todaysTasks.length > 0 && isFutureTrigger(dailyTrigger)) {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "🌱 Tareas de hoy",
-            body: `Tienes ${todaysTasks.length} ${todaysTasks.length === 1 ? "actividad" : "actividades"} pendiente${todaysTasks.length === 1 ? "" : "s"}.`,
-            data: { type: "daily_summary", date: dateStr },
-            badge: todaysTasks.length,
-            sound: "default",
-            android: {
-              channelId: "tasks",
-              color: "#345d25",
-            },
+        const content = {
+          title: "🌱 Tareas de hoy",
+          body: `Tienes ${todaysTasks.length} ${todaysTasks.length === 1 ? "actividad" : "actividades"} pendiente${todaysTasks.length === 1 ? "" : "s"}.`,
+          data: { type: "daily_summary", date: dateStr },
+          badge: todaysTasks.length,
+          sound: "default",
+          android: {
+            channelId: "tasks",
+            color: "#345d25",
           },
+        };
+        await Notifications.scheduleNotificationAsync({
+          content,
           trigger: dailyTrigger,
         });
       }
@@ -171,18 +172,19 @@ export async function scheduleNextNotifications(days = 7) {
       const tomorrowsTasks = schedule[nextStr] || [];
       const advanceTrigger = scheduleAtLocalTime(target, 19, 0);
       if (tomorrowsTasks.length > 0 && isFutureTrigger(advanceTrigger)) {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "🌿 Actividades para mañana",
-            body: `Tienes ${tomorrowsTasks.length} ${tomorrowsTasks.length === 1 ? "actividad" : "actividades"} programada${tomorrowsTasks.length === 1 ? "" : "s"}.`,
-            data: { type: "advance_summary", date: nextStr },
-            badge: 1,
-            sound: "default",
-            android: {
-              channelId: "tasks",
-              color: "#345d25",
-            },
+        const content = {
+          title: "🌿 Actividades para mañana",
+          body: `Tienes ${tomorrowsTasks.length} ${tomorrowsTasks.length === 1 ? "actividad" : "actividades"} programada${tomorrowsTasks.length === 1 ? "" : "s"}.`,
+          data: { type: "advance_summary", date: nextStr },
+          badge: 1,
+          sound: "default",
+          android: {
+            channelId: "tasks",
+            color: "#345d25",
           },
+        };
+        await Notifications.scheduleNotificationAsync({
+          content,
           trigger: advanceTrigger,
         });
       }
@@ -248,52 +250,55 @@ export async function sendPlantTaskTestNotification() {
     const tomorrowTasks = schedule[tomorrowStr] || [];
 
     if (todayTasks.length > 0) {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "💧 Tareas de hoy",
-          body: `Tienes ${todayTasks.length} ${todayTasks.length === 1 ? "actividad" : "actividades"} de plantas.`,
-          data: { type: "daily_summary_test", date: todayStr },
-          badge: todayTasks.length,
-          sound: "default",
-          android: {
-            channelId: "tasks",
-            color: "#345d25",
-          },
+      const content = {
+        title: "🌱 Tareas de hoy",
+        body: `Tienes ${todayTasks.length} ${todayTasks.length === 1 ? "actividad" : "actividades"} pendiente${todayTasks.length === 1 ? "" : "s"}.`,
+        data: { type: "daily_summary_test", date: todayStr },
+        badge: todayTasks.length,
+        sound: "default",
+        android: {
+          channelId: "tasks",
+          color: "#345d25",
         },
+      };
+      await Notifications.scheduleNotificationAsync({
+        content,
         trigger: { type: "timeInterval", seconds: 5, repeats: false },
       });
     }
 
     if (tomorrowTasks.length > 0) {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "🌿 Tareas para mañana",
-          body: `Tienes ${tomorrowTasks.length} ${tomorrowTasks.length === 1 ? "actividad" : "actividades"} programada${tomorrowTasks.length === 1 ? "" : "s"}.`,
-          data: { type: "advance_summary_test", date: tomorrowStr },
-          badge: 1,
-          sound: "default",
-          android: {
-            channelId: "tasks",
-            color: "#345d25",
-          },
+      const content = {
+        title: "🌿 Tareas para mañana",
+        body: `Tienes ${tomorrowTasks.length} ${tomorrowTasks.length === 1 ? "actividad" : "actividades"} programada${tomorrowTasks.length === 1 ? "" : "s"}.`,
+        data: { type: "advance_summary_test", date: tomorrowStr },
+        badge: 1,
+        sound: "default",
+        android: {
+          channelId: "tasks",
+          color: "#345d25",
         },
+      };
+      await Notifications.scheduleNotificationAsync({
+        content,
         trigger: { type: "timeInterval", seconds: 2, repeats: false },
       });
     }
 
     if (todayTasks.length === 0 && tomorrowTasks.length === 0) {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "🌱 Perflora",
-          body: "No hay tareas para hoy ni mañana. Añade una planta para crear recordatorios.",
-          data: { type: "plant_task_test" },
-          badge: 0,
-          sound: "default",
-          android: {
-            channelId: "tasks",
-            color: "#345d25",
-          },
+      const content = {
+        title: "🌱 Perflora",
+        body: "No hay tareas para hoy ni mañana. Añade una planta para crear recordatorios.",
+        data: { type: "plant_task_test" },
+        badge: 0,
+        sound: "default",
+        android: {
+          channelId: "tasks",
+          color: "#345d25",
         },
+      };
+      await Notifications.scheduleNotificationAsync({
+        content,
         trigger: { type: "timeInterval", seconds: 1, repeats: false },
       });
     }
@@ -305,6 +310,65 @@ export async function sendPlantTaskTestNotification() {
   }
 }
 
+// Historial de notificaciones
+const NOTIFICATION_HISTORY_KEY = "notificationHistory";
+
+export async function saveNotificationToHistory(title, body, date, data = {}) {
+  try {
+    const history = await getNotificationHistory();
+    
+    // Agregar nueva notificación
+    const newNotif = {
+      id: Date.now().toString(),
+      title,
+      body,
+      date: date || new Date().toISOString().slice(0, 10),
+      timestamp: Date.now(),
+      data,
+      viewed: false,
+    };
+    
+    history.push(newNotif);
+    
+    // Guardar en AsyncStorage
+    await AsyncStorage.setItem(NOTIFICATION_HISTORY_KEY, JSON.stringify(history));
+  } catch (e) {
+    console.log("Error guardando notificación al historial:", e);
+  }
+}
+
+export async function getNotificationHistory() {
+  try {
+    const data = await AsyncStorage.getItem(NOTIFICATION_HISTORY_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    console.log("Error leyendo historial de notificaciones:", e);
+    return [];
+  }
+}
+
+export async function markNotificationsAsViewed() {
+  try {
+    const history = await getNotificationHistory();
+    const updatedHistory = history.map((notif) => ({
+      ...notif,
+      viewed: true,
+    }));
+    await AsyncStorage.setItem(NOTIFICATION_HISTORY_KEY, JSON.stringify(updatedHistory));
+  } catch (e) {
+    console.log("Error marcando notificaciones como vistas:", e);
+  }
+}
+
+export async function hasUnviewedNotifications() {
+  try {
+    const history = await getNotificationHistory();
+    return history.some((notif) => !notif.viewed);
+  } catch (e) {
+    return false;
+  }
+}
+
 export default {
   registerForPushNotificationsAsync,
   scheduleNextNotifications,
@@ -313,4 +377,8 @@ export default {
   setSavedFrequency,
   sendTestNotification,
   sendPlantTaskTestNotification,
+  saveNotificationToHistory,
+  getNotificationHistory,
+  markNotificationsAsViewed,
+  hasUnviewedNotifications,
 };

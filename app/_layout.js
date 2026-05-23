@@ -1,3 +1,4 @@
+import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Updates from "expo-updates";
@@ -42,6 +43,22 @@ export default function RootLayout() {
     NotificationUtils.registerForPushNotificationsAsync();
     // Programar próximas notificaciones (se actualizará más tarde desde perfil o cuando sea necesario)
     NotificationUtils.scheduleNextNotifications().catch(() => {});
+
+    // Listener para notificaciones recibidas - guardar en historial
+    const notificationListener = Notifications.addNotificationReceivedListener(
+      async (notification) => {
+        const { title, body, data } = notification.content;
+        // Solo guardar si no es periódica
+        if (data?.type !== "periodic_summary") {
+          const date = data?.date || new Date().toISOString().slice(0, 10);
+          await NotificationUtils.saveNotificationToHistory(title, body, date, data);
+        }
+      }
+    );
+
+    return () => {
+      notificationListener.remove();
+    };
   }, []);
 
   if (!appReady) {

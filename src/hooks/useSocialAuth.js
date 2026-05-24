@@ -1,18 +1,18 @@
 // src/hooks/useSocialAuth.js
-import * as Google from "expo-auth-session/providers/google";
 import * as AuthSession from "expo-auth-session";
+import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
-import { useEffect, useState } from "react";
-import { Platform, Alert } from "react-native";
 import {
+  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   OAuthProvider,
   signInWithCredential,
-  signInWithPopup,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
+  signInWithPopup,
   updateProfile
 } from "firebase/auth";
+import { useEffect, useState } from "react";
+import { Alert, Platform } from "react-native";
 import { auth } from "../config/firebase";
 import { OAUTH_CONFIG } from "../config/oauth";
 
@@ -22,11 +22,24 @@ WebBrowser.maybeCompleteAuthSession();
 export function useSocialAuth() {
   const [loading, setLoading] = useState(false);
 
+  // TEMPORAL: Para debug - ver el redirect URI que está usando tu app
+  useEffect(() => {
+    const getRedirectUri = async () => {
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: "perflora",
+        preferredScheme: "https",
+      });
+      console.log("🔗 Redirect URI que tu app está usando:", redirectUri);
+    };
+    getRedirectUri();
+  }, []);
+
   // 1. Google Auth Request
-  const [, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
-    clientId: OAUTH_CONFIG.google.webClientId,
-    iosClientId: OAUTH_CONFIG.google.iosClientId,
+  const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+    webClientId: OAUTH_CONFIG.google.webClientId,
     androidClientId: OAUTH_CONFIG.google.androidClientId,
+    iosClientId: OAUTH_CONFIG.google.iosClientId,
+    scopes: ["profile", "email"],
     redirectUri: AuthSession.makeRedirectUri({
       scheme: "perflora",
     }),
@@ -122,10 +135,11 @@ export function useSocialAuth() {
   // 3. Efecto para escuchar la respuesta de Google (Nativo)
   useEffect(() => {
     if (googleResponse?.type === "success") {
-      const { id_token } = googleResponse.params;
-      if (id_token) {
+      const { authentication } = googleResponse;
+      const idToken = authentication?.idToken;
+      if (idToken) {
         setLoading(true);
-        const credential = GoogleAuthProvider.credential(id_token);
+        const credential = GoogleAuthProvider.credential(idtoken);
         signInWithCredential(auth, credential)
           .catch((error) => {
             console.error("Error de Firebase con credencial de Google:", error);

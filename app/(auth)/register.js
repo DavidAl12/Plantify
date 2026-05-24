@@ -30,7 +30,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { loading: socialLoading, loginWithGoogle } = useSocialAuth();
+  const { loading: socialLoading, loginWithGoogle, loginWithMicrosoft } = useSocialAuth();
   const [errors, setErrors] = useState({
     name: "",
     email: "",
@@ -272,13 +272,19 @@ export default function Register() {
           </TouchableOpacity>
 
           {/* Botón Microsoft */}
-          <TouchableOpacity style={styles.socialButtonWide}>
+          <TouchableOpacity
+            style={styles.socialButtonWide}
+            onPress={loginWithMicrosoft}
+            disabled={socialLoading}
+          >
             <Image
               source={require("../../assets/images/microsoft-logo.png")}
               style={styles.socialLogo}
               resizeMode="contain"
             />
-            <Text style={styles.socialButtonText}>Continuar con Microsoft</Text>
+            <Text style={styles.socialButtonText}>
+              {socialLoading ? "Cargando..." : "Continuar con Microsoft"}
+            </Text>
           </TouchableOpacity>
         </View>
 

@@ -1,13 +1,18 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
 import {
   GoogleAuthProvider,
+  OAuthProvider,
   signInWithCredential,
   signInWithPopup,
 } from "firebase/auth";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Platform } from "react-native";
 import { auth } from "../config/firebase";
 import { OAUTH_CONFIG } from "../config/oauth";
+
+WebBrowser.maybeCompleteAuthSession();
 
 if (Platform.OS !== "web") {
   GoogleSignin.configure({
@@ -16,8 +21,67 @@ if (Platform.OS !== "web") {
   });
 }
 
+const microsoftDiscovery = {
+  authorizationEndpoint: `https://login.microsoftonline.com/${OAUTH_CONFIG.microsoft.tenantId}/oauth2/v2.0/authorize`,
+  tokenEndpoint: `https://login.microsoftonline.com/${OAUTH_CONFIG.microsoft.tenantId}/oauth2/v2.0/token`,
+};
+
 export function useSocialAuth() {
   const [loading, setLoading] = useState(false);
+  const microsoftRedirectUri = AuthSession.makeRedirectUri({
+    scheme: "perflora",
+    isTripleSlashed: true,
+  });
+  const microsoftNonce = useMemo(
+    () => `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    []
+  );
+
+  const [, microsoftResponse, promptMicrosoftAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: OAUTH_CONFIG.microsoft.clientId,
+      scopes: ["openid", "profile", "email", "User.Read"],
+      redirectUri: microsoftRedirectUri,
+      responseType: AuthSession.ResponseType.IdToken,
+      extraParams: {
+        nonce: microsoftNonce,
+        prompt: "select_account",
+        response_mode: "fragment",
+      },
+    },
+    microsoftDiscovery
+  );
+
+  useEffect(() => {
+    console.log("Microsoft redirect URI:", microsoftRedirectUri);
+  }, [microsoftRedirectUri]);
+
+  useEffect(() => {
+    if (microsoftResponse?.type !== "success") {
+      return;
+    }
+
+    const idToken = microsoftResponse.params?.id_token;
+    if (!idToken) {
+      setLoading(false);
+      Alert.alert("Error", "Microsoft no devolvio un token valido para Firebase.");
+      return;
+    }
+
+    setLoading(true);
+    const provider = new OAuthProvider("microsoft.com");
+    const credential = provider.credential({ idToken, rawNonce: microsoftNonce });
+
+    signInWithCredential(auth, credential)
+      .catch((error) => {
+        console.error("Microsoft sign in credential error:", error);
+        Alert.alert(
+          "Error",
+          "No se pudo iniciar sesion con Microsoft: " + (error.message || "intentalo de nuevo")
+        );
+      })
+      .finally(() => setLoading(false));
+  }, [microsoftNonce, microsoftResponse]);
 
   const loginWithGoogle = async () => {
     setLoading(true);
@@ -30,6 +94,7 @@ export function useSocialAuth() {
       }
 
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      await GoogleSignin.signOut();
       const result = await GoogleSignin.signIn();
 
       if (result.type !== "success") {
@@ -54,8 +119,34 @@ export function useSocialAuth() {
     }
   };
 
+  const loginWithMicrosoft = async () => {
+    setLoading(true);
+
+    try {
+      if (Platform.OS === "web") {
+        const provider = new OAuthProvider("microsoft.com");
+        provider.setCustomParameters({ prompt: "select_account" });
+        await signInWithPopup(auth, provider);
+        return;
+      }
+
+      const result = await promptMicrosoftAsync();
+      if (result?.type !== "success") {
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Microsoft sign in error:", error);
+      Alert.alert(
+        "Error",
+        "No se pudo iniciar sesion con Microsoft: " + (error.message || "intentalo de nuevo")
+      );
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     loginWithGoogle,
+    loginWithMicrosoft,
   };
 }

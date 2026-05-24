@@ -8,13 +8,11 @@
     "scheme": "perflora",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#0D0D0D"
     },
-    
     "ios": {
       "supportsTablet": true
     },
@@ -44,7 +42,8 @@
     "updates": {
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/201495ec-a039-4a94-8189-ab7bb335c999"
     },
     "experiments": {
       "typedRoutes": true,

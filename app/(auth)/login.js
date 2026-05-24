@@ -28,7 +28,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { loading: socialLoading, loginWithGoogle } = useSocialAuth();
+  const { loading: socialLoading, loginWithGoogle, loginWithMicrosoft } = useSocialAuth();
   const [errors, setErrors] = useState({
     email: "",
     password: "",
@@ -248,14 +248,18 @@ export default function Login() {
             </TouchableOpacity>
 
             {/* Botón Microsoft */}
-            <TouchableOpacity style={styles.socialButtonWide}>
+            <TouchableOpacity
+              style={styles.socialButtonWide}
+              onPress={loginWithMicrosoft}
+              disabled={socialLoading}
+            >
               <Image
                 source={require("../../assets/images/microsoft-logo.png")}
                 style={styles.socialLogo}
                 resizeMode="contain"
               />
               <Text style={styles.socialButtonText}>
-                Continuar con Microsoft
+                {socialLoading ? "Cargando..." : "Continuar con Microsoft"}
               </Text>
             </TouchableOpacity>
           </View>

@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import AppHeader from "../../components/ui/AppHeader";
 import { auth, db } from "../../src/config/firebase";
+import * as NotificationUtils from "../../src/utils/notificationUtils";
 import { COLORS } from "../../styles/colors";
 
 const { width } = Dimensions.get("window");
@@ -73,6 +74,14 @@ export default function AddPlant() {
 
         createdAt: serverTimestamp(),
       });
+
+      // ✅ Reprogramar notificaciones después de agregar la planta
+      try {
+        await NotificationUtils.scheduleNextNotifications();
+        console.log("Notificaciones reprogramadas después de agregar planta");
+      } catch (error) {
+        console.log("Error reprogramando notificaciones:", error);
+      }
 
       setLoading(false);
       router.replace("/(tabs)/garden");

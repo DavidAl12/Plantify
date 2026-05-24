@@ -190,12 +190,13 @@ export async function scheduleNextNotifications(days = 7) {
       }
     }
 
-    // Schedule periodic reminders based on saved frequency (default 5 hrs)
+    // Schedule periodic reminders based on saved frequency (default 300 minutes = 5 horas)
     const freq = await getSavedFrequency();
     if (freq === "off") return;
-    const hours = freq === null ? 5 : Number(freq);
-    if (Number.isFinite(hours) && hours > 0) {
-      // schedule a repeating notification every `hours` starting now+hours
+    const minutes = freq === null ? 300 : Number(freq); // null = default 5 horas (300 minutos)
+    if (Number.isFinite(minutes) && minutes > 0) {
+      const seconds = minutes * 60; // Convert minutes to seconds
+      console.log(`Scheduling periodic reminder every ${minutes} minutes (${seconds} seconds)`);
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "💧 Recordatorio de Perflora",
@@ -208,7 +209,7 @@ export async function scheduleNextNotifications(days = 7) {
             color: "#345d25",
           },
         },
-        trigger: { type: "timeInterval", seconds: hours * 3600, repeats: true },
+        trigger: { type: "timeInterval", seconds: seconds, repeats: true },
       });
     }
   } catch (e) {

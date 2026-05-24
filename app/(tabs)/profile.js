@@ -4,13 +4,13 @@ import { signOut, updatePassword, updateProfile } from "firebase/auth";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 import AppHeader from "../../components/ui/AppHeader";
@@ -263,9 +263,15 @@ function NotificationsSection() {
 }
 
 function NotificationsSettings() {
-  const [freq, setFreq] = useState(null); // null = default 5, 'off' = off, number = hours
+  const [freq, setFreq] = useState(null); // null = default 300 (5 horas), 'off' = off, number = minutos
   const [saving, setSaving] = useState(false);
-  const options = ["off", 4, 6, 8, 10];
+  const options = [
+    { value: "off", label: "Desactivar notificaciones" },
+    { value: 240, label: "4 horas" },
+    { value: 360, label: "6 horas" },
+    { value: 480, label: "8 horas" },
+    { value: 600, label: "10 horas" },
+  ];
 
   useEffect(() => {
     let mounted = true;
@@ -292,14 +298,14 @@ function NotificationsSettings() {
   return (
     <View style={{ paddingVertical: 10 }}>
       <Text style={{ color: COLORS.onSurfaceVariant, fontSize: 13, marginBottom: 10 }}>
-        Frecuencia de recordatorios periódicos (predeterminado: 5 horas)
+        Recordatorios periódicos (predeterminado: 5 horas)
       </Text>
 
       {options.map((opt) => (
         <TouchableOpacity
-          key={String(opt)}
+          key={String(opt.value)}
           style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8 }}
-          onPress={() => handleSelect(opt === "off" ? "off" : opt)}
+          onPress={() => handleSelect(opt.value)}
         >
           <View
             style={{
@@ -313,14 +319,13 @@ function NotificationsSettings() {
               marginRight: 10,
             }}
           >
-            {((opt === "off" && freq === "off") || (opt !== "off" && freq === opt)) && (
+            {((opt.value === "off" && freq === "off") || (opt.value !== "off" && freq === opt.value)) && (
               <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.primary }} />
             )}
           </View>
 
           <Text style={{ fontSize: 15 }}>
-            {opt === "off" ? "Desactivar notificaciones" : `${opt} horas`}
-            {opt === 4 && "  "}
+            {opt.label}
           </Text>
         </TouchableOpacity>
       ))}

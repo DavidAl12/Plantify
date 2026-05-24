@@ -23,77 +23,97 @@ export const generateFullSchedule = (plants, completedTasks) => {
   endDate.setFullYear(endDate.getFullYear() + 1);
 
   plants.forEach((plant) => {
-    const taskTypes = [
-      {
-        key: "watering",
-        frequency: plant.wateringFrequencyDays || 3,
-        fallbackDate: plant.lastWatered || plant.createdAt || new Date(),
-      },
-      {
-        key: "fertilizing",
-        frequency: plant.carePlan?.fertilizing?.frequencyDays || 30,
-        fallbackDate: plant.carePlan?.fertilizing?.lastDate || plant.createdAt || new Date(),
-      },
-      {
-        key: "pruning",
-        frequency: plant.carePlan?.pruning?.frequencyDays || 60,
-        fallbackDate: plant.carePlan?.pruning?.lastDate || plant.createdAt || new Date(),
-      },
-      {
-        key: "pest_control",
-        frequency: plant.carePlan?.pest_control?.frequencyDays || 15,
-        fallbackDate: plant.carePlan?.pest_control?.lastDate || plant.createdAt || new Date(),
-      },
-    ];
+    try {
+      const taskTypes = [
+        {
+          key: "watering",
+          frequency: plant.wateringFrequencyDays || 3,
+          fallbackDate: plant.lastWatered || plant.createdAt || new Date(),
+        },
+        {
+          key: "fertilizing",
+          frequency: plant.carePlan?.fertilizing?.frequencyDays || 30,
+          fallbackDate: plant.carePlan?.fertilizing?.lastDate || plant.createdAt || new Date(),
+        },
+        {
+          key: "pruning",
+          frequency: plant.carePlan?.pruning?.frequencyDays || 60,
+          fallbackDate: plant.carePlan?.pruning?.lastDate || plant.createdAt || new Date(),
+        },
+        {
+          key: "pest_control",
+          frequency: plant.carePlan?.pest_control?.frequencyDays || 15,
+          fallbackDate: plant.carePlan?.pest_control?.lastDate || plant.createdAt || new Date(),
+        },
+      ];
 
-    taskTypes.forEach((task) => {
-      if (!task.frequency) return;
+      taskTypes.forEach((task) => {
+        if (!task.frequency) return;
 
-      const latestDate = getLatestCompletedDate(plant.id, task.key, completedTasks, task.fallbackDate);
+        const latestDate = getLatestCompletedDate(plant.id, task.key, completedTasks, task.fallbackDate);
 
-      let start;
-      if (typeof latestDate === "string") {
-        const [year, month, day] = latestDate.split("-").map(Number);
-        start = new Date(year, month - 1, day);
-      } else {
-        start = latestDate.toDate ? latestDate.toDate() : new Date(latestDate);
-      }
+        let start;
+        try {
+          if (typeof latestDate === "string") {
+            const [year, month, day] = latestDate.split("-").map(Number);
+            start = new Date(year, month - 1, day);
+          } else if (latestDate?.toDate && typeof latestDate.toDate === "function") {
+            start = latestDate.toDate();
+          } else if (latestDate instanceof Date) {
+            start = new Date(latestDate);
+          } else if (typeof latestDate === "number" || typeof latestDate === "string") {
+            start = new Date(latestDate);
+          } else {
+            console.warn(`Invalid baseDate for plant ${plant.id}:`, latestDate);
+            return;
+          }
 
-      let i = 1;
+          if (isNaN(start.getTime())) {
+            console.warn(`Invalid start date for plant ${plant.id}:`, latestDate);
+            return;
+          }
 
-      while (true) {
-        const nextDate = new Date(start);
-        nextDate.setDate(start.getDate() + i * task.frequency);
+          let i = 1;
 
-        if (nextDate > endDate) break;
+          while (true) {
+            const nextDate = new Date(start);
+            nextDate.setDate(start.getDate() + i * task.frequency);
 
-        // 🔑 Generar dateStr en tiempo LOCAL para evitar desfases
-        const year = nextDate.getFullYear();
-        const month = String(nextDate.getMonth() + 1).padStart(2, "0");
-        const day = String(nextDate.getDate()).padStart(2, "0");
-        const dateStr = `${year}-${month}-${day}`;
+            if (nextDate > endDate) break;
 
-        if (!schedule[dateStr]) schedule[dateStr] = [];
+            // 🔑 Generar dateStr en tiempo LOCAL para evitar desfases
+            const year = nextDate.getFullYear();
+            const month = String(nextDate.getMonth() + 1).padStart(2, "0");
+            const day = String(nextDate.getDate()).padStart(2, "0");
+            const dateStr = `${year}-${month}-${day}`;
 
-        const id = `${plant.id}_${task.key}_${dateStr}`;
+            if (!schedule[dateStr]) schedule[dateStr] = [];
 
-        const isCompleted = completedTasks.some(
-          (t) => t.plantId === plant.id && t.type === task.key && t.completed && t.date >= dateStr
-        );
+            const id = `${plant.id}_${task.key}_${dateStr}`;
 
-        schedule[dateStr].push({
-          id,
-          plantId: plant.id,
-          name: plant.name,
-          image: plant.imageUrl || plant.image || null,
-          type: task.key,
-          completed: isCompleted,
-          date: dateStr,
-        });
+            const isCompleted = completedTasks.some(
+              (t) => t.plantId === plant.id && t.type === task.key && t.completed && t.date >= dateStr
+            );
 
-        i++;
-      }
-    });
+            schedule[dateStr].push({
+              id,
+              plantId: plant.id,
+              name: plant.name,
+              image: plant.imageUrl || plant.image || null,
+              type: task.key,
+              completed: isCompleted,
+              date: dateStr,
+            });
+
+            i++;
+          }
+        } catch (e) {
+          console.warn(`Error processing task for plant ${plant.id}:`, e);
+        }
+      });
+    } catch (e) {
+      console.warn(`Error processing plant ${plant.id}:`, e);
+    }
   });
 
   // Mantener todas las tareas completadas visibles (solo si la planta existe en el jardín)

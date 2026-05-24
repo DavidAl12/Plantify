@@ -4,8 +4,9 @@ import * as SplashScreen from "expo-splash-screen";
 import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { auth } from "../src/config/firebase";
 import { AlertProvider } from "../src/context/AlertContext";
-import NotificationUtils from "../src/utils/notificationUtils";
+import * as NotificationUtils from "../src/utils/notificationUtils";
 
 export default function RootLayout() {
   const [appReady, setAppReady] = useState(false);
@@ -41,9 +42,36 @@ export default function RootLayout() {
     checkUpdates();
 
     // Registrar para push (solicita permisos si hace falta)
-    NotificationUtils.registerForPushNotificationsAsync();
-    // Programar próximas notificaciones (se actualizará más tarde desde perfil o cuando sea necesario)
-    NotificationUtils.scheduleNextNotifications().catch(() => {});
+    NotificationUtils.registerForPushNotificationsAsync()
+      .then((token) => {
+        if (token) {
+          console.log("Push notifications enabled. Token:", token.substring(0, 20) + "...");
+        } else {
+          console.warn("Push notifications not available or permission denied");
+        }
+      })
+      .catch((error) => console.log("Error registering for push notifications:", error));
+
+    // Listener para usuario autenticado - programar notificaciones
+    const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        // Usuario autenticado: programar notificaciones
+        try {
+          await NotificationUtils.scheduleNextNotifications();
+          console.log("Notifications scheduled successfully");
+        } catch (error) {
+          console.error("Error scheduling notifications:", error);
+        }
+      } else {
+        // Usuario desautenticado: cancelar notificaciones
+        try {
+          await NotificationUtils.cancelAllScheduledNotifications();
+          console.log("Notifications cancelled (user logged out)");
+        } catch (error) {
+          console.error("Error cancelling notifications:", error);
+        }
+      }
+    });
 
     // Listener para notificaciones recibidas - guardar en historial
     const notificationListener = Notifications.addNotificationReceivedListener(
@@ -59,6 +87,7 @@ export default function RootLayout() {
 
     return () => {
       notificationListener.remove();
+      unsubscribeAuth();
     };
   }, []);
 

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -11,8 +12,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../../../src/config/firebase";
+import * as NotificationUtils from "../../../src/utils/notificationUtils";
 
 export default function EditPlant() {
   const { id } = useLocalSearchParams();
@@ -76,6 +77,14 @@ export default function EditPlant() {
         "carePlan.pruning.frequencyDays": Number(pruningFreq) || 0,
         "carePlan.pest_control.frequencyDays": Number(pestFreq) || 0,
       });
+
+      // ✅ Reprogramar notificaciones después de editar la planta
+      try {
+        await NotificationUtils.scheduleNextNotifications();
+        console.log("Notificaciones reprogramadas después de editar planta");
+      } catch (error) {
+        console.log("Error reprogramando notificaciones:", error);
+      }
 
       Alert.alert("¡Éxito!", "Planta actualizada correctamente.", [
         { text: "OK", onPress: () => router.back() }

@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logoApp.png",
-    "scheme": "perflora",
+    "scheme": ["perflora", "com.arley_col.Perflora"],
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
@@ -17,6 +17,9 @@
           "data": [
             {
               "scheme": "perflora"
+            },
+            {
+              "scheme": "com.arley_col.Perflora"
             },
             {
               "scheme": "https",

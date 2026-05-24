@@ -4,6 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AlertProvider } from "../src/context/AlertContext";
 import NotificationUtils from "../src/utils/notificationUtils";
 
 export default function RootLayout() {
@@ -67,7 +68,10 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <AlertProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </AlertProvider>
     </SafeAreaProvider>
   );
 }
+

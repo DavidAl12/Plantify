@@ -1,29 +1,30 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    collection,
-    deleteDoc,
-    doc,
-    getDoc,
-    onSnapshot,
-    orderBy,
-    query,
-    serverTimestamp,
-    setDoc,
-    updateDoc,
-    where,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+  writeBatch
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
@@ -111,8 +112,21 @@ export default function PlantDetail() {
           onPress: async () => {
             try {
               const user = auth.currentUser;
+              if (!user) return;
 
-              await deleteDoc(doc(db, "users", user.uid, "plants", id));
+              const batch = writeBatch(db);
+              const taskQuery = query(
+                collection(db, "users", user.uid, "tasks"),
+                where("plantId", "==", id),
+              );
+              const taskSnapshots = await getDocs(taskQuery);
+
+              taskSnapshots.forEach((taskDoc) => {
+                batch.delete(doc(db, "users", user.uid, "tasks", taskDoc.id));
+              });
+
+              batch.delete(doc(db, "users", user.uid, "plants", id));
+              await batch.commit();
 
               router.replace("/(tabs)/garden");
             } catch (error) {
@@ -125,18 +139,17 @@ export default function PlantDetail() {
   };
 
   useEffect(() => {
-    const fetchPlant = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
+    const user = auth.currentUser;
+    if (!user || !id) return;
 
-      const snap = await getDoc(doc(db, "users", user.uid, "plants", id));
-
+    const plantRef = doc(db, "users", user.uid, "plants", id);
+    const unsubscribe = onSnapshot(plantRef, (snap) => {
       if (snap.exists()) {
         setPlant({ id: snap.id, ...snap.data() });
       }
-    };
+    });
 
-    fetchPlant();
+    return unsubscribe;
   }, [id]);
 
   useEffect(() => {

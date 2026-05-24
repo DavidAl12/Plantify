@@ -1,22 +1,28 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
+import {
+  collection,
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import {
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
-
 import AppHeader from "../../components/ui/AppHeader";
-import { COLORS } from "../../styles/colors";
-
-import { collection, doc, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../../src/config/firebase";
+import { useAlert } from "../../src/context/AlertContext";
+import { COLORS } from "../../styles/colors";
 
 import { generateFullSchedule } from "../../src/utils/calendarUtils";
 
@@ -62,6 +68,7 @@ export default function CalendarScreen() {
   const [plants, setPlants] = useState([]);
   const [completedTasks, setCompletedTasks] = useState([]);
   const [schedule, setSchedule] = useState({});
+  const { showAlert } = useAlert();
 
   // Cargar plantas
   useEffect(() => {
@@ -107,6 +114,28 @@ export default function CalendarScreen() {
     setSchedule(generated);
   }, [plants, completedTasks]);
 
+  // Limpiar tareas huérfanas de plantas que ya no están en el jardín
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user || plants.length === 0 || completedTasks.length === 0) return;
+
+    const plantIds = new Set(plants.map((p) => p.id));
+    const orphanTasks = completedTasks.filter(
+      (t) => t.plantId && !plantIds.has(t.plantId),
+    );
+
+    if (orphanTasks.length > 0) {
+      orphanTasks.forEach(async (task) => {
+        try {
+          await deleteDoc(doc(db, "users", user.uid, "tasks", task.id));
+          console.log("Tarea huérfana eliminada:", task.id);
+        } catch (e) {
+          console.error("Error al eliminar tarea huérfana:", e);
+        }
+      });
+    }
+  }, [plants, completedTasks]);
+
   // MARCADO OPTIMIZADO (no recalcular en cada render)
   const markedDates = useMemo(() => {
     const marks = {};
@@ -114,7 +143,12 @@ export default function CalendarScreen() {
     Object.keys(schedule).forEach((date) => {
       const tasks = schedule[date];
 
-      const uniqueTypes = [...new Set(tasks.map((t) => t.type))];
+      // 1. Only show dots for tasks that are NOT completed!
+      const pendingTasks = tasks.filter((t) => !t.completed);
+      const uniqueTypes = [...new Set(pendingTasks.map((t) => t.type))];
+
+      // 2. A task is overdue if it is not completed and its date is before today
+      const hasOverdue = tasks.some((t) => !t.completed && date < today);
 
       marks[date] = {
         dots: uniqueTypes.map((type) => ({
@@ -122,6 +156,14 @@ export default function CalendarScreen() {
           color: TASK_COLORS[type],
         })),
       };
+
+      if (hasOverdue) {
+        // Red dot indicator for overdue tasks
+        marks[date].dots.push({
+          key: "overdue_indicator",
+          color: "#F44336",
+        });
+      }
     });
 
     // mantener selección sin dañar fechas
@@ -141,40 +183,80 @@ export default function CalendarScreen() {
     return schedule[selectedDate] || [];
   }, [schedule, selectedDate]);
 
-  // ✅ Toggle check
-  const toggleTask = async (task) => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    // Verificar si la fecha seleccionada es futura
+  const confirmTaskCompletion = (task) => {
     const today = new Date().toISOString().split('T')[0];
+
     if (selectedDate > today) {
-      Alert.alert("No puedes marcar tareas futuras", "Solo puedes marcar tareas para hoy o días anteriores.");
+      showAlert({
+        title: "No puedes marcar tareas futuras",
+        message: "Solo puedes marcar tareas para hoy o días anteriores.",
+        confirmLabel: "Entendido",
+      });
       return;
     }
 
-    const taskRef = doc(db, "users", user.uid, "tasks", task.id);
+    if (task.completed) {
+      showAlert({
+        title: "Tarea ya completada",
+        message: "Esta tarea ya fue marcada como realizada y no puede revertirse.",
+        confirmLabel: "Entendido",
+      });
+      return;
+    }
+
+    showAlert({
+      title: "Confirmar tarea",
+      message: "¿Deseas marcar esta tarea como completada? Esta acción no se puede revertir.",
+      details: getTaskLabel(task),
+      confirmLabel: "Confirmar",
+      cancelLabel: "Cancelar",
+      confirmColor: "#2e7d32",
+      cancelColor: "#c62828",
+      onConfirm: () => completeTask(task),
+    });
+  };
+
+  const completeTask = async (task) => {
+    if (!task) return;
+
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const todayStr = (() => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    })();
+
+    // Always record the task completed on today's actual date!
+    const actualTaskId = `${task.plantId}_${task.type}_${todayStr}`;
+    const taskRef = doc(db, "users", user.uid, "tasks", actualTaskId);
     const plantRef = doc(db, "users", user.uid, "plants", task.plantId);
 
-    const isCompleting = !task.completed;
-
     try {
-      // 1. Actualizar la tarea
       await setDoc(taskRef, {
-        ...task,
-        date: selectedDate,
-        completed: isCompleting,
-        completedAt: isCompleting ? serverTimestamp() : null,
+        id: actualTaskId,
+        plantId: task.plantId,
+        type: task.type,
+        name: task.name,
+        image: task.image || null,
+        date: todayStr,
+        completed: true,
+        completedAt: serverTimestamp(),
       });
 
-      // 2. Si es riego, sincronizar con el estado de la planta
-      if (task.type === "watering" && isCompleting) {
-        await updateDoc(plantRef, {
-          lastWatered: serverTimestamp(),
-        });
+      const updateData = {};
+      if (task.type === "watering") {
+        updateData.lastWatered = serverTimestamp();
+      } else {
+        updateData[`carePlan.${task.type}.lastDate`] = serverTimestamp();
       }
+
+      await updateDoc(plantRef, updateData);
     } catch (error) {
-      console.error("Error al sincronizar tarea:", error);
+      console.error("Error al completar tarea:", error);
     }
   };
 
@@ -190,13 +272,37 @@ export default function CalendarScreen() {
     return `${labels[task.type] || "🌱"} ${getPlantName(task)}`;
   };
 
-    const getPlantName = (task) => {
-      const plant = plants.find((p) => p.id === task.plantId);
+  const getPlantName = (task) => {
+    const plant = plants.find((p) => p.id === task.plantId);
 
-      if (!plant) return task.name;
+    if (!plant) return task.name;
 
-      return plant.commonNames?.[0] || plant.name;
+    return plant.commonNames?.[0] || plant.name;
+  };
+
+  // Título sin emoji, para jerarquía visual
+  const getTaskTitle = (task) => {
+    const titles = {
+      watering: `Riego de ${getPlantName(task)}`,
+      fertilizing: `Fertilización de ${getPlantName(task)}`,
+      pruning: `Poda de ${getPlantName(task)}`,
+      pest_control: `Control de plagas de ${getPlantName(task)}`,
     };
+
+    return titles[task.type] || `Actividad de ${getPlantName(task)}`;
+  };
+
+  // Descripción breve de la tarea (para mostrar bajo el título)
+  const getTaskDescription = (task) => {
+    const desc = {
+      watering: "Riega la planta hasta que el sustrato esté húmedo pero no encharcado.",
+      fertilizing: "Aplica fertilizante ligero siguiendo la dosis recomendada.",
+      pruning: "Corta o elimina las hojas o brotes marchitos.",
+      pest_control: "Revisa y trata signos de plagas o infestaciones.",
+    };
+
+    return desc[task.type] || "Revisa y atiende la planta según necesidad.";
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -245,35 +351,67 @@ export default function CalendarScreen() {
           </View>
 
           {selectedTasks.length === 0 ? (
-            <Text style={styles.noTasks}>No hay tareas programadas</Text>
+            <View style={styles.noTasksCard}>
+              <Text style={styles.noTasksCardText}>¡Increíble — hoy nos podemos tomar un descanso, así como nuestras plantas!</Text>
+            </View>
           ) : (
-            selectedTasks.map((task) => (
-              <View key={task.id} style={[styles.taskCard, task.completed && styles.taskCardCompleted]}>
-                <View style={styles.taskLeft}>
-                  {task.image && (
-                    <Image
-                      source={{ uri: task.image }}
-                      style={[styles.taskImage, task.completed && styles.taskImageCompleted]}
+            selectedTasks.map((task) => {
+              const isOverdue = !task.completed && task.date < today;
+              return (
+                <View key={task.id} style={[styles.taskCard, task.completed && styles.taskCardCompleted]}>
+                  {/* Left: small image */}
+                  <View style={styles.taskImageContainer}>
+                    {task.image ? (
+                      <Image
+                        source={{ uri: task.image }}
+                        style={[styles.taskImage, task.completed && styles.taskImageCompleted]}
+                      />
+                    ) : (
+                      <View style={[styles.taskImagePlaceholder, task.completed && styles.taskImageCompleted]} />
+                    )}
+                  </View>
+
+                  {/* Center: main content (title + description) */}
+                  <View style={styles.taskMain}>
+                    <Text style={[styles.taskMainTitle, task.completed && styles.taskTitleCompleted]}>
+                      {getTaskTitle(task)}
+                    </Text>
+                    <Text style={styles.taskMainDesc}>
+                      {getTaskDescription(task)}
+                    </Text>
+                    {isOverdue && (
+                      <TouchableOpacity
+                        style={styles.performNowBtn}
+                        onPress={() => confirmTaskCompletion(task)}
+                      >
+                        <Ionicons name="flash" size={14} color="white" />
+                        <Text style={styles.performNowBtnText}>Realizar ahora</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {/* Right: action checkbox */}
+                  <TouchableOpacity
+                    style={[
+                      styles.taskAction,
+                      isOverdue && styles.taskActionOverdue
+                    ]}
+                    onPress={() => confirmTaskCompletion(task)}
+                    disabled={task.completed}
+                  >
+                    <Ionicons
+                      name={task.completed ? "checkmark-circle" : (isOverdue ? "close" : "ellipse-outline")}
+                      size={isOverdue ? 16 : 28}
+                      color={task.completed ? COLORS.primary : (isOverdue ? "white" : "gray")}
                     />
-                  )}
-
-                  <Text style={[styles.taskTitle, task.completed && styles.taskTitleCompleted]}>{getTaskLabel(task)}</Text>
+                  </TouchableOpacity>
                 </View>
-
-                <TouchableOpacity onPress={() => toggleTask(task)}>
-                  <Ionicons
-                    name={
-                      task.completed ? "checkmark-circle" : "ellipse-outline"
-                    }
-                    size={26}
-                    color={task.completed ? COLORS.primary : "gray"}
-                  />
-                </TouchableOpacity>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
       </View>
+
     </ScrollView>
   );
 }
@@ -321,6 +459,27 @@ const styles = StyleSheet.create({
     color: COLORS.onSurfaceVariant,
   },
 
+  noTasksCard: {
+    backgroundColor: "white",
+    borderRadius: 18,
+    padding: 22,
+    marginTop: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+  },
+
+  noTasksCardText: {
+    fontWeight: "800",
+    fontSize: 16,
+    color: "#2b2b2b",
+    textAlign: "center",
+  },
+
   taskCard: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -333,6 +492,21 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    overflow: "hidden",
+  },
+
+  taskLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
+  },
+
+  taskAction: {
+    marginLeft: 12,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   tasksHeader: {
@@ -358,6 +532,48 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#1b1b1b",
     fontWeight: "500",
+    flexShrink: 1,
+  },
+
+  taskImageContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
+    overflow: "hidden",
+    marginRight: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  taskImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+  },
+
+  taskImagePlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: "#eef6ea",
+  },
+
+  taskMain: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: "center",
+  },
+
+  taskMainTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#13320f",
+  },
+
+  taskMainDesc: {
+    fontSize: 13,
+    color: "#556254",
+    marginTop: 4,
   },
 
   dateBadge: {
@@ -389,5 +605,33 @@ const styles = StyleSheet.create({
   taskTitleCompleted: {
     textDecorationLine: 'line-through',
     color: '#888',
+  },
+
+  taskActionOverdue: {
+    backgroundColor: "#F44336",
+    borderRadius: 14,
+    width: 28,
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  performNowBtn: {
+    backgroundColor: "#F44336",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 8,
+    gap: 4,
+  },
+
+  performNowBtnText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });

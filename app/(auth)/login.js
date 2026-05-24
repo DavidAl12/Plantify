@@ -19,6 +19,7 @@ import {
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import { auth } from "../../src/config/firebase";
+import { useSocialAuth } from "../../src/hooks/useSocialAuth";
 import { COLORS } from "../../styles/colors";
 
 export default function Login() {
@@ -27,6 +28,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { loading: socialLoading, loginWithGoogle } = useSocialAuth();
   const [errors, setErrors] = useState({
     email: "",
     password: "",
@@ -230,13 +232,19 @@ export default function Login() {
           {/* Botones sociales */}
           <View style={styles.socialColumn}>
             {/* Botón Google */}
-            <TouchableOpacity style={styles.socialButtonWide}>
+            <TouchableOpacity
+              style={styles.socialButtonWide}
+              onPress={loginWithGoogle}
+              disabled={socialLoading}
+            >
               <Image
                 source={require("../../assets/images/google-logo.png")}
                 style={styles.socialLogo}
                 resizeMode="contain"
               />
-              <Text style={styles.socialButtonText}>Continuar con Google</Text>
+              <Text style={styles.socialButtonText}>
+                {socialLoading ? "Cargando..." : "Continuar con Google"}
+              </Text>
             </TouchableOpacity>
 
             {/* Botón Microsoft */}

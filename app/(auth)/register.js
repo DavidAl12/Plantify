@@ -18,6 +18,7 @@ import {
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import { auth } from "../../src/config/firebase";
+import { useSocialAuth } from "../../src/hooks/useSocialAuth";
 import { COLORS } from "../../styles/colors";
 
 export default function Register() {
@@ -29,6 +30,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { loading: socialLoading, loginWithGoogle } = useSocialAuth();
   const [errors, setErrors] = useState({
     name: "",
     email: "",
@@ -254,13 +256,19 @@ export default function Register() {
         {/* Botones de registro social */}
         <View style={styles.socialColumn}>
           {/* Botón Google */}
-          <TouchableOpacity style={styles.socialButtonWide}>
+          <TouchableOpacity
+            style={styles.socialButtonWide}
+            onPress={loginWithGoogle}
+            disabled={socialLoading}
+          >
             <Image
               source={require("../../assets/images/google-logo.png")}
               style={styles.socialLogo}
               resizeMode="contain"
             />
-            <Text style={styles.socialButtonText}>Continuar con Google</Text>
+            <Text style={styles.socialButtonText}>
+              {socialLoading ? "Cargando..." : "Continuar con Google"}
+            </Text>
           </TouchableOpacity>
 
           {/* Botón Microsoft */}

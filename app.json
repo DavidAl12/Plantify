@@ -50,7 +50,14 @@
     {
       "image": "./assets/images/splash.png",
       "resizeMode": "cover",
-      "backgroundColor": "#0D0D0D"
+      "backgroundColor": "#F8F6EF",
+      "imageWidth": 288,
+      "android": {
+        "drawable": {
+          "icon": "./assets/images/transparent-splash-icon.xml"
+        },
+        "backgroundColor": "#F8F6EF"
+      }
     }
   ]
 ],

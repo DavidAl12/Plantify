@@ -1,12 +1,16 @@
 import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
+import { ImageBackground, StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { auth } from "../src/config/firebase";
 import { AlertProvider } from "../src/context/AlertContext";
 import * as NotificationUtils from "../src/utils/notificationUtils";
+
+const SPLASH_DURATION_MS = 4500;
 
 export default function RootLayout() {
   const [appReady, setAppReady] = useState(false);
@@ -14,13 +18,12 @@ export default function RootLayout() {
   useEffect(() => {
     const prepareApp = async () => {
       try {
-        await SplashScreen.preventAutoHideAsync();
-        await new Promise((resolve) => setTimeout(resolve, 4500));
+        await new Promise((resolve) => setTimeout(resolve, SPLASH_DURATION_MS));
       } catch (error) {
         console.log("SplashScreen error:", error);
       } finally {
         setAppReady(true);
-        await SplashScreen.hideAsync();
+        await SplashScreen.hideAsync().catch(() => {});
       }
     };
 
@@ -92,7 +95,15 @@ export default function RootLayout() {
   }, []);
 
   if (!appReady) {
-    return null;
+    return (
+      <ImageBackground
+        source={require("../assets/images/splash.png")}
+        style={styles.splash}
+        resizeMode="cover"
+      >
+        <StatusBar style="dark" translucent backgroundColor="transparent" />
+      </ImageBackground>
+    );
   }
 
   return (
@@ -103,4 +114,13 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#F8F6EF",
+  },
+});
 

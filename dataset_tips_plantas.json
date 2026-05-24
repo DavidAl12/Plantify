@@ -1,0 +1,722 @@
+[
+    {
+        "ID":"UB-01",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Prioriza la salud sobre la estética",
+        "Consejo":"Coloca tus plantas donde reciban la cantidad correcta de luz antes de pensar únicamente en decoración."
+    },
+    {
+        "ID":"UB-02",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Luz indirecta brillante",
+        "Consejo":"Las plantas tropicales suelen desarrollarse mejor cerca de ventanas iluminadas sin recibir sol directo intenso."
+    },
+    {
+        "ID":"UB-03",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Rotación semanal",
+        "Consejo":"Gira las macetas regularmente para evitar que la planta crezca inclinada hacia una sola fuente de luz."
+    },
+    {
+        "ID":"UB-04",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Evita vidrios calientes",
+        "Consejo":"No pegues las hojas al vidrio en días soleados porque pueden quemarse por el calor acumulado."
+    },
+    {
+        "ID":"UB-05",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Aprovecha las ventanas orientadas al este",
+        "Consejo":"La luz suave de la mañana es ideal para muchas plantas de interior."
+    },
+    {
+        "ID":"UB-06",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Separación estratégica",
+        "Consejo":"Evita amontonar demasiadas plantas para mejorar la ventilación y reducir hongos."
+    },
+    {
+        "ID":"UB-07",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Uso de lámparas LED",
+        "Consejo":"Las luces de crecimiento ayudan cuando el espacio tiene poca iluminación natural."
+    },
+    {
+        "ID":"UB-08",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"No cambies la planta constantemente",
+        "Consejo":"Mover una planta repetidamente puede generar estrés y caída de hojas."
+    },
+    {
+        "ID":"UB-09",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Plantas altas al fondo",
+        "Consejo":"Organiza las plantas grandes detrás de las pequeñas para mejorar la distribución de luz."
+    },
+    {
+        "ID":"UB-10",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Protección contra corrientes",
+        "Consejo":"Las corrientes de aire frío afectan especialmente a especies tropicales sensibles."
+    },
+    {
+        "ID":"UB-11",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Identifica el exceso de sol",
+        "Consejo":"Las manchas marrones secas suelen indicar quemaduras solares."
+    },
+    {
+        "ID":"UB-12",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Observa el crecimiento",
+        "Consejo":"Una planta que se estira demasiado normalmente necesita más luz."
+    },
+    {
+        "ID":"RH-01",
+        "Categoría":"Riego y Humedad",
+        "Título":"Riega según el sustrato",
+        "Consejo":"Comprueba siempre la humedad de la tierra antes de volver a regar."
+    },
+    {
+        "ID":"RH-02",
+        "Categoría":"Riego y Humedad",
+        "Título":"Evita el exceso de agua",
+        "Consejo":"La mayoría de plantas mueren más por exceso de riego que por falta de agua."
+    },
+    {
+        "ID":"RH-03",
+        "Categoría":"Riego y Humedad",
+        "Título":"Agua a temperatura ambiente",
+        "Consejo":"El agua muy fría puede causar estrés en las raíces."
+    },
+    {
+        "ID":"RH-04",
+        "Categoría":"Riego y Humedad",
+        "Título":"Riego profundo",
+        "Consejo":"Riega hasta que el agua salga por los agujeros de drenaje."
+    },
+    {
+        "ID":"RH-05",
+        "Categoría":"Riego y Humedad",
+        "Título":"No dejes agua acumulada",
+        "Consejo":"Vacía el plato de la maceta para evitar pudrición radicular."
+    },
+    {
+        "ID":"RH-06",
+        "Categoría":"Riego y Humedad",
+        "Título":"Más humedad para tropicales",
+        "Consejo":"Las monsteras, calatheas y helechos agradecen ambientes húmedos."
+    },
+    {
+        "ID":"RH-07",
+        "Categoría":"Riego y Humedad",
+        "Título":"Usa humidificador",
+        "Consejo":"Los humidificadores son más efectivos que rociar agua constantemente."
+    },
+    {
+        "ID":"RH-08",
+        "Categoría":"Riego y Humedad",
+        "Título":"Riego matutino",
+        "Consejo":"Regar temprano ayuda a que la planta aproveche mejor la humedad."
+    },
+    {
+        "ID":"RH-09",
+        "Categoría":"Riego y Humedad",
+        "Título":"Reduce el riego en invierno",
+        "Consejo":"Las plantas crecen más lento durante temporadas frías."
+    },
+    {
+        "ID":"RH-10",
+        "Categoría":"Riego y Humedad",
+        "Título":"Macetas transparentes",
+        "Consejo":"Las macetas internas transparentes ayudan a revisar raíces y humedad."
+    },
+    {
+        "ID":"RH-11",
+        "Categoría":"Riego y Humedad",
+        "Título":"Peso de la maceta",
+        "Consejo":"Aprende a identificar cuándo regar levantando la maceta y sintiendo su peso."
+    },
+    {
+        "ID":"RH-12",
+        "Categoría":"Riego y Humedad",
+        "Título":"Síntomas de falta de agua",
+        "Consejo":"Hojas caídas y secas suelen indicar deshidratación."
+    },
+    {
+        "ID":"SM-01",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"Drenaje obligatorio",
+        "Consejo":"Todas las macetas deben tener agujeros para drenar el exceso de agua."
+    },
+    {
+        "ID":"SM-02",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"Sustrato aireado",
+        "Consejo":"Mezcla perlita o corteza para mejorar la oxigenación de raíces."
+    },
+    {
+        "ID":"SM-03",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"Maceta proporcional",
+        "Consejo":"Un recipiente demasiado grande puede mantener exceso de humedad."
+    },
+    {
+        "ID":"SM-04",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"Trasplante gradual",
+        "Consejo":"Aumenta el tamaño de la maceta poco a poco."
+    },
+    {
+        "ID":"SM-05",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"Evita tierra de jardín",
+        "Consejo":"La tierra exterior puede contener plagas y hongos."
+    },
+    {
+        "ID":"SM-06",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"Renueva el sustrato",
+        "Consejo":"Cambiar parte del sustrato cada cierto tiempo ayuda a recuperar nutrientes."
+    },
+    {
+        "ID":"SM-07",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"Coco y perlita",
+        "Consejo":"La fibra de coco mejora retención de humedad sin compactar."
+    },
+    {
+        "ID":"SM-08",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"Raíces compactadas",
+        "Consejo":"Si las raíces salen por debajo de la maceta es momento de trasplantar."
+    },
+    {
+        "ID":"SM-09",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"Arcilla expandida",
+        "Consejo":"Las piedras de arcilla ayudan a mejorar el drenaje."
+    },
+    {
+        "ID":"SM-10",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"No entierres demasiado",
+        "Consejo":"Cubrir demasiado el tallo puede favorecer pudriciones."
+    },
+    {
+        "ID":"SM-11",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"Macetas de barro",
+        "Consejo":"Las macetas de terracota ayudan a secar más rápido el sustrato."
+    },
+    {
+        "ID":"SM-12",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"Evita compactación",
+        "Consejo":"Un sustrato duro dificulta la respiración de las raíces."
+    },
+    {
+        "ID":"MN-01",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Limpia las hojas",
+        "Consejo":"El polvo limita la fotosíntesis y atrae plagas."
+    },
+    {
+        "ID":"MN-02",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Poda hojas dañadas",
+        "Consejo":"Eliminar hojas enfermas ayuda a conservar energía."
+    },
+    {
+        "ID":"MN-03",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Aislamiento inicial",
+        "Consejo":"Mantén plantas nuevas separadas por dos semanas."
+    },
+    {
+        "ID":"MN-04",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Revisión semanal",
+        "Consejo":"Inspecciona hojas y tallos regularmente."
+    },
+    {
+        "ID":"MN-05",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Herramientas limpias",
+        "Consejo":"Desinfecta las tijeras antes de podar."
+    },
+    {
+        "ID":"MN-06",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Retira hojas caídas",
+        "Consejo":"Las hojas húmedas sobre el sustrato favorecen hongos."
+    },
+    {
+        "ID":"MN-07",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Poda estratégica",
+        "Consejo":"Cortar puntas promueve mayor frondosidad."
+    },
+    {
+        "ID":"MN-08",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Evita estrés tras compra",
+        "Consejo":"No trasplantes inmediatamente después de comprar una planta."
+    },
+    {
+        "ID":"MN-09",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Soportes para trepadoras",
+        "Consejo":"Usa tutores para ayudar al crecimiento vertical."
+    },
+    {
+        "ID":"MN-10",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Limpieza de macetas",
+        "Consejo":"Lava las macetas reutilizadas antes de plantar."
+    },
+    {
+        "ID":"MN-11",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Revisión de raíces",
+        "Consejo":"Las raíces oscuras y blandas indican pudrición."
+    },
+    {
+        "ID":"MN-12",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Mantén rutina",
+        "Consejo":"El mantenimiento constante previene problemas mayores."
+    },
+    {
+        "ID":"IP-01",
+        "Categoría":"Identificación de Problemas",
+        "Título":"Hojas amarillas",
+        "Consejo":"Generalmente indican exceso de agua o mal drenaje."
+    },
+    {
+        "ID":"IP-02",
+        "Categoría":"Identificación de Problemas",
+        "Título":"Puntas marrones",
+        "Consejo":"Pueden ser señal de baja humedad o acumulación de sales."
+    },
+    {
+        "ID":"IP-03",
+        "Categoría":"Identificación de Problemas",
+        "Título":"Manchas blancas",
+        "Consejo":"Revisa si existe presencia de hongos como oídio."
+    },
+    {
+        "ID":"IP-04",
+        "Categoría":"Identificación de Problemas",
+        "Título":"Hojas enrolladas",
+        "Consejo":"El estrés hídrico o plagas suelen causar enrollamiento."
+    },
+    {
+        "ID":"IP-05",
+        "Categoría":"Identificación de Problemas",
+        "Título":"Mal olor del sustrato",
+        "Consejo":"El olor a podrido indica raíces dañadas."
+    },
+    {
+        "ID":"IP-06",
+        "Categoría":"Identificación de Problemas",
+        "Título":"Crecimiento lento",
+        "Consejo":"La falta de luz suele frenar el desarrollo."
+    },
+    {
+        "ID":"IP-07",
+        "Categoría":"Identificación de Problemas",
+        "Título":"Hojas blandas",
+        "Consejo":"Las raíces asfixiadas por exceso de agua generan tallos débiles."
+    },
+    {
+        "ID":"IP-08",
+        "Categoría":"Identificación de Problemas",
+        "Título":"Pérdida de color",
+        "Consejo":"Las plantas variegadas pierden color con poca luz."
+    },
+    {
+        "ID":"IP-09",
+        "Categoría":"Identificación de Problemas",
+        "Título":"Caída de hojas",
+        "Consejo":"Los cambios bruscos de temperatura afectan el follaje."
+    },
+    {
+        "ID":"IP-10",
+        "Categoría":"Identificación de Problemas",
+        "Título":"Tallos alargados",
+        "Consejo":"Es una señal clásica de falta de iluminación."
+    },
+    {
+        "ID":"IP-11",
+        "Categoría":"Identificación de Problemas",
+        "Título":"Moho superficial",
+        "Consejo":"El exceso de humedad favorece hongos en la tierra."
+    },
+    {
+        "ID":"IP-12",
+        "Categoría":"Identificación de Problemas",
+        "Título":"Flores marchitas",
+        "Consejo":"El estrés térmico puede hacer caer flores prematuramente."
+    },
+    {
+        "ID":"FN-01",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"Fertiliza en crecimiento",
+        "Consejo":"Aplica fertilizante principalmente en primavera y verano."
+    },
+    {
+        "ID":"FN-02",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"Evita sobrefertilizar",
+        "Consejo":"Demasiado fertilizante quema raíces y hojas."
+    },
+    {
+        "ID":"FN-03",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"Dosis reducidas",
+        "Consejo":"Usar media dosis suele ser suficiente para interiores."
+    },
+    {
+        "ID":"FN-04",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"Fertilización líquida",
+        "Consejo":"Los fertilizantes líquidos son fáciles de controlar."
+    },
+    {
+        "ID":"FN-05",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"No fertilices plantas enfermas",
+        "Consejo":"Primero recupera la salud de la planta."
+    },
+    {
+        "ID":"FN-06",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"Lava el sustrato",
+        "Consejo":"Un riego abundante ocasional elimina acumulación de sales."
+    },
+    {
+        "ID":"FN-07",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"Observa las hojas",
+        "Consejo":"La falta de nutrientes suele generar hojas pálidas."
+    },
+    {
+        "ID":"FN-08",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"Fertilizante equilibrado",
+        "Consejo":"Los abonos balanceados ayudan al desarrollo general."
+    },
+    {
+        "ID":"FN-09",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"Humus de lombriz",
+        "Consejo":"Es una opción natural y segura para enriquecer el sustrato."
+    },
+    {
+        "ID":"FN-10",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"Fertilización nocturna",
+        "Consejo":"Evita fertilizar bajo sol intenso."
+    },
+    {
+        "ID":"FN-11",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"Calcio y magnesio",
+        "Consejo":"Algunas especies requieren minerales adicionales para evitar deformaciones."
+    },
+    {
+        "ID":"FN-12",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"Descanso invernal",
+        "Consejo":"Reduce fertilización durante temporadas frías."
+    },
+    {
+        "ID":"PP-01",
+        "Categoría":"Plagas y Prevención",
+        "Título":"Inspecciona el envés",
+        "Consejo":"Muchas plagas se esconden debajo de las hojas."
+    },
+    {
+        "ID":"PP-02",
+        "Categoría":"Plagas y Prevención",
+        "Título":"Aísla plantas infectadas",
+        "Consejo":"Separar la planta evita contagios."
+    },
+    {
+        "ID":"PP-03",
+        "Categoría":"Plagas y Prevención",
+        "Título":"Control preventivo",
+        "Consejo":"Revisar frecuentemente evita infestaciones graves."
+    },
+    {
+        "ID":"PP-04",
+        "Categoría":"Plagas y Prevención",
+        "Título":"Jabón potásico",
+        "Consejo":"Es útil para combatir pulgones y cochinillas."
+    },
+    {
+        "ID":"PP-05",
+        "Categoría":"Plagas y Prevención",
+        "Título":"Aceite de neem",
+        "Consejo":"Ayuda a controlar plagas comunes de manera natural."
+    },
+    {
+        "ID":"PP-06",
+        "Categoría":"Plagas y Prevención",
+        "Título":"Evita exceso de humedad",
+        "Consejo":"La humedad excesiva atrae mosquitos del sustrato."
+    },
+    {
+        "ID":"PP-07",
+        "Categoría":"Plagas y Prevención",
+        "Título":"Trampas amarillas",
+        "Consejo":"Son efectivas contra pequeños insectos voladores."
+    },
+    {
+        "ID":"PP-08",
+        "Categoría":"Plagas y Prevención",
+        "Título":"Ventilación adecuada",
+        "Consejo":"La circulación de aire reduce hongos y bacterias."
+    },
+    {
+        "ID":"PP-09",
+        "Categoría":"Plagas y Prevención",
+        "Título":"No reutilices tierra infectada",
+        "Consejo":"Las plagas pueden permanecer en el sustrato."
+    },
+    {
+        "ID":"PP-10",
+        "Categoría":"Plagas y Prevención",
+        "Título":"Revisión nocturna",
+        "Consejo":"Algunas plagas son más visibles durante la noche."
+    },
+    {
+        "ID":"PP-11",
+        "Categoría":"Plagas y Prevención",
+        "Título":"Evita hojas mojadas",
+        "Consejo":"Las hojas húmedas favorecen enfermedades fúngicas."
+    },
+    {
+        "ID":"PP-12",
+        "Categoría":"Plagas y Prevención",
+        "Título":"Limpieza preventiva",
+        "Consejo":"Limpiar hojas dificulta la aparición de plagas."
+    },
+    {
+        "ID":"PG-01",
+        "Categoría":"Propagación y Crecimiento",
+        "Título":"Esquejes sanos",
+        "Consejo":"Selecciona tallos fuertes para propagar."
+    },
+    {
+        "ID":"PG-02",
+        "Categoría":"Propagación y Crecimiento",
+        "Título":"Corte limpio",
+        "Consejo":"Usa tijeras desinfectadas para evitar infecciones."
+    },
+    {
+        "ID":"PG-03",
+        "Categoría":"Propagación y Crecimiento",
+        "Título":"Nudos visibles",
+        "Consejo":"Muchos esquejes necesitan al menos un nudo para enraizar."
+    },
+    {
+        "ID":"PG-04",
+        "Categoría":"Propagación y Crecimiento",
+        "Título":"Agua limpia",
+        "Consejo":"Cambia el agua de esquejes regularmente."
+    },
+    {
+        "ID":"PG-05",
+        "Categoría":"Propagación y Crecimiento",
+        "Título":"Luz suave",
+        "Consejo":"Los esquejes prefieren luz indirecta brillante."
+    },
+    {
+        "ID":"PG-06",
+        "Categoría":"Propagación y Crecimiento",
+        "Título":"Hormonas de enraizamiento",
+        "Consejo":"Pueden acelerar el desarrollo de raíces."
+    },
+    {
+        "ID":"PG-07",
+        "Categoría":"Propagación y Crecimiento",
+        "Título":"Paciencia en propagación",
+        "Consejo":"Algunas especies tardan semanas en enraizar."
+    },
+    {
+        "ID":"PG-08",
+        "Categoría":"Propagación y Crecimiento",
+        "Título":"Mayor humedad",
+        "Consejo":"Los esquejes jóvenes suelen requerir ambientes húmedos."
+    },
+    {
+        "ID":"PG-09",
+        "Categoría":"Propagación y Crecimiento",
+        "Título":"No fertilices esquejes",
+        "Consejo":"Las raíces nuevas son muy sensibles."
+    },
+    {
+        "ID":"PG-10",
+        "Categoría":"Propagación y Crecimiento",
+        "Título":"Macetas pequeñas",
+        "Consejo":"Las plantas jóvenes se desarrollan mejor en recipientes pequeños."
+    },
+    {
+        "ID":"PG-11",
+        "Categoría":"Propagación y Crecimiento",
+        "Título":"Poda para crecimiento",
+        "Consejo":"Cortar puntas estimula nuevos brotes."
+    },
+    {
+        "ID":"PG-12",
+        "Categoría":"Propagación y Crecimiento",
+        "Título":"Observa raíces",
+        "Consejo":"Raíces blancas indican buen estado de salud."
+    },
+    {
+        "ID":"CE-01",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Invierno y reposo",
+        "Consejo":"Muchas plantas disminuyen su crecimiento en invierno."
+    },
+    {
+        "ID":"CE-02",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Verano y evaporación",
+        "Consejo":"Las altas temperaturas secan el sustrato más rápido."
+    },
+    {
+        "ID":"CE-03",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Protección contra calefacción",
+        "Consejo":"La calefacción reduce la humedad ambiental."
+    },
+    {
+        "ID":"CE-04",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Menos fertilizante en frío",
+        "Consejo":"Durante el invierno la planta necesita menos nutrientes."
+    },
+    {
+        "ID":"CE-05",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Ajusta iluminación",
+        "Consejo":"En días cortos considera usar luces LED."
+    },
+    {
+        "ID":"CE-06",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Ventilación moderada",
+        "Consejo":"Abrir ventanas mejora el flujo de aire."
+    },
+    {
+        "ID":"CE-07",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Evita golpes térmicos",
+        "Consejo":"Los cambios bruscos afectan hojas y raíces."
+    },
+    {
+        "ID":"CE-08",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Protección en lluvias",
+        "Consejo":"Las lluvias fuertes pueden saturar macetas exteriores."
+    },
+    {
+        "ID":"CE-09",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Mayor vigilancia en verano",
+        "Consejo":"Las plagas aumentan con el calor."
+    },
+    {
+        "ID":"CE-10",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Limpieza otoñal",
+        "Consejo":"Retira hojas secas antes de temporadas húmedas."
+    },
+    {
+        "ID":"CE-11",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Observa humedad",
+        "Consejo":"La humedad ambiental cambia según la estación."
+    },
+    {
+        "ID":"CE-12",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Adapta el riego",
+        "Consejo":"Cada temporada requiere ajustes diferentes."
+    },
+    {
+        "ID":"RH-13",
+        "Categoría":"Riego y Humedad",
+        "Título":"Riego de Verano",
+        "Consejo":"En días calurosos, riega temprano en la mañana para evitar la evaporación."
+    },
+    {
+        "ID":"MN-13",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Hojas Limpias",
+        "Consejo":"Limpia el polvo de las hojas con un paño húmedo para que respiren mejor."
+    },
+    {
+        "ID":"RH-14",
+        "Categoría":"Riego y Humedad",
+        "Título":"Drenaje Vital",
+        "Consejo":"Asegúrate de que tus macetas no acumulen agua en el fondo para evitar hongos."
+    },
+    {
+        "ID":"UB-13",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Luz Indirecta",
+        "Consejo":"La mayoría de plantas de interior prefieren luz brillante pero indirecta."
+    },
+    {
+        "ID":"MN-14",
+        "Categoría":"Mantenimiento y Limpieza",
+        "Título":"Poda Regular",
+        "Consejo":"Elimina hojas secas o amarillas para que la planta concentre su energía."
+    },
+    {
+        "ID":"FN-13",
+        "Categoría":"Fertilización y Nutrientes",
+        "Título":"Abono Natural",
+        "Consejo":"Usa cáscaras de huevo trituradas como fuente natural de calcio."
+    },
+    {
+        "ID":"UB-14",
+        "Categoría":"Ubicación e Iluminación",
+        "Título":"Rotación",
+        "Consejo":"Gira tus plantas un cuarto de vuelta cada semana para un crecimiento uniforme."
+    },
+    {
+        "ID":"CE-13",
+        "Categoría":"Cuidados Estacionales",
+        "Título":"Temperatura Estable",
+        "Consejo":"Evita colocar plantas cerca de corrientes de aire frío o caliente."
+    },
+    {
+        "ID":"RH-15",
+        "Categoría":"Riego y Humedad",
+        "Título":"Humedad Ambiental",
+        "Consejo":"Agrupa tus plantas para crear un microclima húmedo entre ellas."
+    },
+    {
+        "ID":"SM-13",
+        "Categoría":"Sustrato y Macetas",
+        "Título":"Trasplante",
+        "Consejo":"Si las raíces salen por el drenaje, es momento de una maceta más grande."
+    },
+    {
+        "ID":"RH-16",
+        "Categoría":"Riego y Humedad",
+        "Título":"Agua Reposada",
+        "Consejo":"Deja reposar el agua 24h antes de regar para eliminar el cloro."
+    },
+    {
+        "ID":"PP-13",
+        "Categoría":"Plagas y Prevención",
+        "Título":"Compañía Verde",
+        "Consejo":"Algunas plantas crecen mejor juntas: albahaca y tomate son grandes aliadas."
+    }
+]

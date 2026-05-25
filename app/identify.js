@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { auth, db } from "../src/config/firebase";
+import { getAppNow, getFirestoreNow } from "../src/utils/dateUtils";
 
 // ─── Servicios ────────────────────────────────────────────────────────────────
 import { uploadToCloudinary } from "../src/services/cloudinaryService";
@@ -144,20 +145,20 @@ export default function IdentifyScreen() {
         propagation: details.propagation_methods || [],
         imageUrl,
         wateringFrequencyDays: selected.carePlan?.watering || 5,
-        createdAt: serverTimestamp(),
-        lastWatered: serverTimestamp(),
+        createdAt: getFirestoreNow(),
+        lastWatered: getAppNow(),
         carePlan: {
           fertilizing: {
             frequencyDays: selected.carePlan?.fertilizing || 30,
-            lastDate: serverTimestamp(),
+            lastDate: getAppNow(),
           },
           pruning: {
             frequencyDays: selected.carePlan?.pruning || 60,
-            lastDate: serverTimestamp(),
+            lastDate: getAppNow(),
           },
           pest_control: {
             frequencyDays: selected.carePlan?.pest_control || 21,
-            lastDate: serverTimestamp(),
+            lastDate: getAppNow(),
           },
         },
       });
@@ -241,7 +242,7 @@ export default function IdentifyScreen() {
         {saving ? (
           <ActivityIndicator color="white" />
         ) : (
-          <Text style={styles.saveButtonText}>Guardar "{details.common_names?.[0] || selected?.name}" 🌿</Text>
+          <Text style={styles.saveButtonText}>Guardar {details.common_names?.[0] || selected?.name} 🌿</Text>
         )}
       </TouchableOpacity>
 

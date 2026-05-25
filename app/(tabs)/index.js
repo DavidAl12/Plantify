@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { collection, onSnapshot } from "firebase/firestore";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Animated,
     Dimensions,
@@ -110,9 +111,16 @@ function SuggestionCard({ item, index }) {
 
 export default function Home() {
   const router = useRouter();
+  const scrollRef = useRef(null);
   const [plants, setPlants] = useState([]);
   const [userName, setUserName] = useState("");
   const [showActivitiesModal, setShowActivitiesModal] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, []),
+  );
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -184,7 +192,7 @@ export default function Home() {
     <View style={styles.container}>
       <AppHeader />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Saludo */}
         <View style={styles.greeting}>
           <Text style={styles.welcome}>Bienvenido otra vez</Text>
@@ -294,7 +302,7 @@ export default function Home() {
           <View style={styles.rowBetween}>
             <Text style={styles.sectionTitle}>MI JARDÍN</Text>
             <TouchableOpacity
-              onPress={() => router.push("/identify")}
+              onPress={() => router.push("/plant/add")}
               style={styles.identifyBtn}
             >
               <Ionicons name="scan-outline" size={16} color="white" />

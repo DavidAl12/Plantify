@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { useState } from "react";
+import { addDoc, collection } from "firebase/firestore";
+import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   Image,
   ScrollView,
   StyleSheet,
@@ -16,13 +16,13 @@ import {
 } from "react-native";
 import AppHeader from "../../components/ui/AppHeader";
 import { auth, db } from "../../src/config/firebase";
+import { getAppNow, getFirestoreNow } from "../../src/utils/dateUtils";
 import * as NotificationUtils from "../../src/utils/notificationUtils";
 import { COLORS } from "../../styles/colors";
 
-const { width } = Dimensions.get("window");
-
 export default function AddPlant() {
   const router = useRouter();
+  const scrollRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [frequency, setFrequency] = useState("");
@@ -31,10 +31,36 @@ export default function AddPlant() {
   const [pest, setPest] = useState("");
   const [description, setDescription] = useState("");
   const [manualImageUri, setManualImageUri] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, []),
+  );
+
+  const parseRequiredDays = (value) => {
+    const days = Number(value);
+    return Number.isInteger(days) && days > 0 ? days : null;
+  };
+
+  const missingName = submitted && !name.trim();
+  const missingImage = submitted && !manualImageUri;
+  const missingWatering = submitted && !parseRequiredDays(frequency);
+  const missingFertilizing = submitted && !parseRequiredDays(fertilizing);
+  const missingPruning = submitted && !parseRequiredDays(pruning);
+  const missingPest = submitted && !parseRequiredDays(pest);
+  const hasFrequencyErrors = missingWatering || missingFertilizing || missingPruning || missingPest;
 
   const handleSave = async () => {
-    if (!name) {
-      alert("Por favor ingresa el nombre de la planta");
+    setSubmitted(true);
+
+    const watering = parseRequiredDays(frequency);
+    const fertilizingDays = parseRequiredDays(fertilizing);
+    const pruningDays = parseRequiredDays(pruning);
+    const pestDays = parseRequiredDays(pest);
+
+    if (!name.trim() || !manualImageUri || !watering || !fertilizingDays || !pruningDays || !pestDays) {
       return;
     }
 
@@ -43,36 +69,31 @@ export default function AddPlant() {
       const user = auth.currentUser;
       if (!user) return;
 
-      const watering = Number(frequency) || 3;
-      const fertilizingDays = Number(fertilizing) || 30;
-      const pruningDays = Number(pruning) || 60;
-      const pestDays = Number(pest) || 21;
-
       await addDoc(collection(db, "users", user.uid, "plants"), {
-        name,
-        commonNames: [name],
+        name: name.trim(),
+        commonNames: [name.trim()],
         wateringFrequencyDays: watering,
-        lastWatered: new Date(),
-        imageUrl: manualImageUri || null,
-        image: manualImageUri || null,
+        lastWatered: getAppNow(),
+        imageUrl: manualImageUri,
+        image: manualImageUri,
         description: description.trim() || null,
 
         carePlan: {
           fertilizing: {
             frequencyDays: fertilizingDays,
-            lastDate: new Date(),
+            lastDate: getAppNow(),
           },
           pruning: {
             frequencyDays: pruningDays,
-            lastDate: new Date(),
+            lastDate: getAppNow(),
           },
           pest_control: {
             frequencyDays: pestDays,
-            lastDate: new Date(),
+            lastDate: getAppNow(),
           },
         },
 
-        createdAt: serverTimestamp(),
+        createdAt: getFirestoreNow(),
       });
 
       // ✅ Reprogramar notificaciones después de agregar la planta
@@ -189,6 +210,7 @@ export default function AddPlant() {
     <View style={styles.container}>
       <AppHeader />
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -251,12 +273,12 @@ export default function AddPlant() {
         <Text style={styles.sectionTitle}>O agrega manualmente</Text>
         <View style={styles.formCard}>
           <Text style={styles.formNote}>
-            Opcional: agrega una foto para tu planta o llena los datos que conozcas.
+            Para crear el calendario de cuidados, carga una imagen y completa las frecuencias en días.
           </Text>
 
           <View style={styles.imageActionsRow}>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, missingImage && styles.inputError]}
               onPress={takeManualPhoto}
               activeOpacity={0.8}
             >
@@ -265,7 +287,7 @@ export default function AddPlant() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, missingImage && styles.inputError]}
               onPress={pickManualImage}
               activeOpacity={0.8}
             >
@@ -294,56 +316,56 @@ export default function AddPlant() {
               placeholderTextColor={COLORS.onSurfaceVariant}
               value={name}
               onChangeText={setName}
-              style={styles.input}
+              style={[styles.input, missingName && styles.inputError]}
             />
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Frecuencia de riego (días)</Text>
+            <Text style={styles.label}>Frecuencia de riego (cada cuántos días)</Text>
             <TextInput
               placeholder="Ej: 7"
               placeholderTextColor={COLORS.onSurfaceVariant}
               value={frequency}
               onChangeText={setFrequency}
               keyboardType="numeric"
-              style={styles.input}
+              style={[styles.input, missingWatering && styles.inputError]}
             />
           </View>
 
           <View style={styles.formGroupRow}>
             <View style={styles.formHalf}>
-              <Text style={styles.label}>Poda (días)</Text>
+              <Text style={styles.label}>Frecuencia de poda (días)</Text>
               <TextInput
                 placeholder="Ej: 60"
                 placeholderTextColor={COLORS.onSurfaceVariant}
                 value={pruning}
                 onChangeText={setPruning}
                 keyboardType="numeric"
-                style={styles.input}
+                style={[styles.input, missingPruning && styles.inputError]}
               />
             </View>
             <View style={styles.formHalf}>
-              <Text style={styles.label}>Abono (días)</Text>
+              <Text style={styles.label}>Frecuencia de abono (días)</Text>
               <TextInput
                 placeholder="Ej: 30"
                 placeholderTextColor={COLORS.onSurfaceVariant}
                 value={fertilizing}
                 onChangeText={setFertilizing}
                 keyboardType="numeric"
-                style={styles.input}
+                style={[styles.input, missingFertilizing && styles.inputError]}
               />
             </View>
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Plagas (días)</Text>
+            <Text style={styles.label}>Frecuencia de control de plagas (días)</Text>
             <TextInput
               placeholder="Ej: 21"
               placeholderTextColor={COLORS.onSurfaceVariant}
               value={pest}
               onChangeText={setPest}
               keyboardType="numeric"
-              style={styles.input}
+              style={[styles.input, missingPest && styles.inputError]}
             />
           </View>
 
@@ -359,6 +381,12 @@ export default function AddPlant() {
               numberOfLines={4}
             />
           </View>
+
+          {hasFrequencyErrors ? (
+            <Text style={styles.formErrorText}>
+              Todos los campos de frecuencia son obligatorios
+            </Text>
+          ) : null}
 
           <TouchableOpacity
             style={[
@@ -387,7 +415,7 @@ export default function AddPlant() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: "#f8f9f4",
   },
   center: {
     justifyContent: "center",
@@ -477,7 +505,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    backgroundColor: COLORS.surfaceContainerLow,
+    backgroundColor: "rgba(167, 201, 87, 0.12)",
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -495,7 +523,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 18,
     overflow: "hidden",
-    backgroundColor: COLORS.surfaceContainerLow,
+    backgroundColor: "rgba(167, 201, 87, 0.10)",
   },
   previewImage: {
     width: "100%",
@@ -532,14 +560,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: COLORS.surfaceContainerLow,
+    backgroundColor: "rgba(167, 201, 87, 0.12)",
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 16,
     fontSize: 14,
     color: COLORS.onSurface,
     borderWidth: 1,
-    borderColor: COLORS.outlineVariant,
+    borderColor: "rgba(52, 93, 37, 0.16)",
+  },
+  inputError: {
+    borderWidth: 1.5,
+    borderColor: COLORS.error,
+  },
+  formErrorText: {
+    color: COLORS.error,
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: -4,
+    marginBottom: 12,
+    textAlign: "center",
   },
   saveButton: {
     paddingVertical: 14,

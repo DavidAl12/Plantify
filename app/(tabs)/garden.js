@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     FlatList,
     Image,
@@ -13,54 +14,7 @@ import {
 } from "react-native";
 import AppHeader from "../../components/ui/AppHeader";
 import { auth, db } from "../../src/config/firebase";
-
-// Helpers
-const getLatestActivityDate = (plantId, type, completedTasks, plantCreatedAt) => {
-  const plantTasks = completedTasks.filter(
-    (t) => t.plantId === plantId && t.type === type && t.completed
-  );
-  if (plantTasks.length === 0) {
-    return plantCreatedAt; // Fallback to plant's createdAt
-  }
-  plantTasks.sort((a, b) => {
-    if (a.date === b.date) {
-      const timeA = a.completedAt?.toDate ? a.completedAt.toDate().getTime() : (a.completedAt ? new Date(a.completedAt).getTime() : 0);
-      const timeB = b.completedAt?.toDate ? b.completedAt.toDate().getTime() : (b.completedAt ? new Date(b.completedAt).getTime() : 0);
-      return timeB - timeA;
-    }
-    return b.date.localeCompare(a.date);
-  });
-  return plantTasks[0].date;
-};
-
-const diasDesdeStr = (dateVal) => {
-  if (!dateVal) return null;
-  let dateObj;
-  if (typeof dateVal === "string") {
-    const [year, month, day] = dateVal.split("-").map(Number);
-    dateObj = new Date(year, month - 1, day);
-  } else {
-    dateObj = dateVal.toDate ? dateVal.toDate() : new Date(dateVal);
-  }
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  dateObj.setHours(0, 0, 0, 0);
-  
-  const diffTime = today.getTime() - dateObj.getTime();
-  const diffDays = Math.floor(diffTime / 86400000);
-  return diffDays >= 0 ? diffDays : 0;
-};
-
-const getActivityStatus = (lastDate, frequency) => {
-  if (!lastDate || !frequency) return "gray"; // no data
-  const days = diasDesdeStr(lastDate);
-  const warningThreshold = Math.floor(frequency * 0.75);
-  const overdueThreshold = frequency;
-
-  if (days <= warningThreshold) return "#4CAF50"; // green - on track
-  if (days < overdueThreshold) return "#FFC107"; // yellow - warning
-  return "#F44336"; // red - overdue
-};
+import { getPlantActivitySummary, getPlantStatus } from "../../src/utils/plantStatusUtils";
 
 const getActivityColors = (status) => {
   switch (status) {
@@ -82,32 +36,18 @@ const formatDaysAgo = (days) => {
   return `hace ${days}d`;
 };
 
-const getPlantStatus = (item, completedTasks) => {
-  const latestWateredDate = getLatestActivityDate(item.id, "watering", completedTasks, item.lastWatered || item.createdAt);
-  const wateringStatus = getActivityStatus(latestWateredDate, item.wateringFrequencyDays);
-
-  const latestFertDate = getLatestActivityDate(item.id, "fertilizing", completedTasks, item.carePlan?.fertilizing?.lastDate || item.createdAt);
-  const fertStatus = getActivityStatus(latestFertDate, item.carePlan?.fertilizing?.frequencyDays);
-
-  const latestPruningDate = getLatestActivityDate(item.id, "pruning", completedTasks, item.carePlan?.pruning?.lastDate || item.createdAt);
-  const pruningStatus = getActivityStatus(latestPruningDate, item.carePlan?.pruning?.frequencyDays);
-
-  const latestPestDate = getLatestActivityDate(item.id, "pest_control", completedTasks, item.carePlan?.pest_control?.lastDate || item.createdAt);
-  const pestStatus = getActivityStatus(latestPestDate, item.carePlan?.pest_control?.frequencyDays);
-
-  const statuses = [wateringStatus, fertStatus, pruningStatus, pestStatus].filter(s => s !== "gray");
-
-  if (statuses.includes("#F44336")) return { status: "Descuidada", color: "#ffebee", textColor: "#c62828" };
-  if (statuses.includes("#FFC107")) return { status: "Atención", color: "#fff3e0", textColor: "#f57c00" };
-  return { status: "Sana", color: "#e8f5e9", textColor: "#2e7d32" };
-};
-
-
 export default function Garden() {
   const router = useRouter();
+  const listRef = useRef(null);
   const [plants, setPlants] = useState([]);
   const [completedTasks, setCompletedTasks] = useState([]);
   const [search, setSearch] = useState("");
+
+  useFocusEffect(
+    useCallback(() => {
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    }, []),
+  );
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -150,28 +90,13 @@ export default function Garden() {
   // CARD
   const renderItem = ({ item }) => {
     const plantState = getPlantStatus(item, completedTasks);
-
-    const latestWateredDate = getLatestActivityDate(item.id, "watering", completedTasks, item.lastWatered || item.createdAt);
-    const wateringDays = diasDesdeStr(latestWateredDate);
-    const wateringStatus = getActivityStatus(latestWateredDate, item.wateringFrequencyDays);
-
-    const latestFertDate = getLatestActivityDate(item.id, "fertilizing", completedTasks, item.carePlan?.fertilizing?.lastDate || item.createdAt);
-    const fertDays = diasDesdeStr(latestFertDate);
-    const fertStatus = getActivityStatus(latestFertDate, item.carePlan?.fertilizing?.frequencyDays);
-
-    const latestPruningDate = getLatestActivityDate(item.id, "pruning", completedTasks, item.carePlan?.pruning?.lastDate || item.createdAt);
-    const pruningDays = diasDesdeStr(latestPruningDate);
-    const pruningStatus = getActivityStatus(latestPruningDate, item.carePlan?.pruning?.frequencyDays);
-
-    const latestPestDate = getLatestActivityDate(item.id, "pest_control", completedTasks, item.carePlan?.pest_control?.lastDate || item.createdAt);
-    const pestDays = diasDesdeStr(latestPestDate);
-    const pestStatus = getActivityStatus(latestPestDate, item.carePlan?.pest_control?.frequencyDays);
+    const activitySummary = getPlantActivitySummary(item, completedTasks);
 
     const activities = [
-      { label: "Riego", color: wateringStatus, days: wateringDays },
-      { label: "Fert.", color: fertStatus, days: fertDays },
-      { label: "Poda", color: pruningStatus, days: pruningDays },
-      { label: "Plagas", color: pestStatus, days: pestDays },
+      { label: "Riego", color: activitySummary.watering.status, days: activitySummary.watering.days },
+      { label: "Fert.", color: activitySummary.fertilizing.status, days: activitySummary.fertilizing.days },
+      { label: "Poda", color: activitySummary.pruning.status, days: activitySummary.pruning.days },
+      { label: "Plagas", color: activitySummary.pest_control.status, days: activitySummary.pest_control.days },
     ];
 
     return (
@@ -273,6 +198,7 @@ export default function Garden() {
 
       {/* LISTA */}
       <FlatList
+        ref={listRef}
         data={filteredPlants}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}

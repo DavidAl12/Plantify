@@ -1,49 +1,62 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { signOut, updatePassword, updateProfile } from "firebase/auth";
-import { collection, onSnapshot } from "firebase/firestore";
-import { useEffect, useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  signOut,
+  updatePassword,
+  updateProfile,
+} from "firebase/auth";
+import { collection, onSnapshot } from "firebase/firestore";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import AppHeader from "../../components/ui/AppHeader";
 import { auth, db } from "../../src/config/firebase";
+import * as NotificationUtils from "../../src/utils/notificationUtils";
 import { COLORS } from "../../styles/colors";
+
+const DEFAULT_AVATAR = "https://i.imgur.com/6VBx3io.png";
 
 export default function Profile() {
   const router = useRouter();
-
-  const [user, setUser] = useState(null);
+  const scrollRef = useRef(null);
+  const [user, setUser] = useState(auth.currentUser);
   const [plantsCount, setPlantsCount] = useState(0);
   const [openSection, setOpenSection] = useState(null);
 
-  // 🔥 Cargar usuario
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      setOpenSection(null);
+    }, []),
+  );
+
   useEffect(() => {
     setUser(auth.currentUser);
   }, []);
 
-  // 🌱 Contar plantas
   useEffect(() => {
     const currentUser = auth.currentUser;
-    if (!currentUser) return;
+    if (!currentUser) return undefined;
 
     const ref = collection(db, "users", currentUser.uid, "plants");
-
-    const unsubscribe = onSnapshot(ref, (snapshot) => {
+    return onSnapshot(ref, (snapshot) => {
       setPlantsCount(snapshot.size);
     });
-
-    return unsubscribe;
   }, []);
 
-  // 🔥 Logout
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -53,494 +66,726 @@ export default function Profile() {
     }
   };
 
-  return (
-    <ScrollView style={styles.container}>
-      <AppHeader />
+  const handlePickProfileImage = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permission.status !== "granted") {
+        alert("Se necesita permiso para acceder a la galeria");
+        return;
+      }
 
-      <View style={styles.content}>
-        {/* PERFIL */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.6,
+      });
+
+      if (!result.canceled && auth.currentUser) {
+        const uri = result.assets[0].uri;
+        await updateProfile(auth.currentUser, { photoURL: uri });
+        setUser({ ...auth.currentUser, photoURL: uri });
+      }
+    } catch (error) {
+      console.log("Error actualizando foto:", error);
+      alert("No se pudo actualizar la foto de perfil");
+    }
+  };
+
+  const toggleSection = (section) => {
+    setOpenSection((current) => (current === section ? null : section));
+  };
+
+  return (
+    <View style={styles.screen}>
+      <AppHeader />
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.profileHero}>
+          <View style={styles.avatarShell}>
             <Image
-              source={{
-                uri: user?.photoURL || "https://i.imgur.com/6VBx3io.png",
-              }}
+              source={{ uri: user?.photoURL || DEFAULT_AVATAR }}
               style={styles.avatar}
             />
           </View>
 
-          <Text style={styles.name}>{user?.displayName || "Usuario"}</Text>
-          <Text style={styles.email}>{user?.email}</Text>
-        </View>
-
-        {/* CONFIGURACIÓN */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>CONFIGURACIÓN</Text>
-
-          <MenuItem
-            icon="person-outline"
-            title="Información Personal"
-            subtitle="Editar nombre"
-            isOpen={openSection === "personal"}
-            onPress={() =>
-              setOpenSection(openSection === "personal" ? null : "personal")
-            }
-          >
-            <PersonalInfo user={user} />
-          </MenuItem>
-
-          <MenuItem
-            icon="shield-checkmark-outline"
-            title="Seguridad"
-            subtitle="Cambiar contraseña"
-            isOpen={openSection === "security"}
-            onPress={() =>
-              setOpenSection(openSection === "security" ? null : "security")
-            }
-          >
-            <SecuritySection />
-          </MenuItem>
-
-          <MenuItem
-            icon="notifications-outline"
-            title="Notificaciones"
-            subtitle="Activar o desactivar"
-            isOpen={openSection === "notifications"}
-            onPress={() =>
-              setOpenSection(
-                openSection === "notifications" ? null : "notifications",
-              )
-            }
-          >
-            <NotificationsSection />
-          </MenuItem>
-        </View>
-
-        {/* STATS */}
-        <View style={styles.stats}>
-          <View style={styles.cardPrimary}>
-            <Ionicons name="leaf-outline" size={28} style={styles.iconBg} />
-            <Text style={styles.statNumber}>{plantsCount}</Text>
-            <Text style={styles.statText}>Plantas activas</Text>
+          <View style={styles.heroText}>
+            <Text style={styles.name} numberOfLines={1}>{user?.displayName || "Usuario"}</Text>
+            <Text style={styles.email} numberOfLines={1}>{user?.email || "Sin correo"}</Text>
+            <Text style={styles.plantsBadge}>{plantsCount} plantas activas</Text>
           </View>
 
-          <View style={styles.cardSecondary}>
-            <Ionicons name="trophy-outline" size={28} style={styles.iconBg} />
-            <Text style={styles.statNumber}>Califícanos</Text>
-            <Text style={styles.statText}>Ayuda a mejorar</Text>
+          <View style={styles.heroIconBadge}>
+            <Text style={styles.heroPlantEmoji}>🪴</Text>
           </View>
         </View>
 
-        {/* LOGOUT */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+        <Text style={styles.sectionTitle}>Configuracion</Text>
+
+        <SettingsCard
+          icon="person-outline"
+          title="Informacion personal"
+          subtitle="Edita tu nombre y datos personales"
+          isOpen={openSection === "personal"}
+          onPress={() => toggleSection("personal")}
+        >
+          <PersonalInfo user={user} onUserChange={setUser} onPickImage={handlePickProfileImage} />
+        </SettingsCard>
+
+        <SettingsCard
+          icon="shield-checkmark-outline"
+          title="Seguridad"
+          subtitle="Cambia tu contrasena"
+          isOpen={openSection === "security"}
+          onPress={() => toggleSection("security")}
+        >
+          <SecuritySection />
+        </SettingsCard>
+
+        <SettingsCard
+          icon="notifications-outline"
+          title="Notificaciones"
+          subtitle="Activa o desactiva alertas"
+          isOpen={openSection === "notifications"}
+          onPress={() => toggleSection("notifications")}
+        >
+          <NotificationsSection />
+        </SettingsCard>
+
+        <SettingsCard
+          icon="document-text-outline"
+          title="Politicas y terminos"
+          subtitle="Consulta nuestras politicas y terminos de uso"
+          isOpen={openSection === "terms"}
+          onPress={() => toggleSection("terms")}
+        >
+          <PoliciesTermsSection />
+        </SettingsCard>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
           <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
-          <Text style={styles.logoutText}>Cerrar Sesión</Text>
+          <Text style={styles.logoutText}>Cerrar sesion</Text>
         </TouchableOpacity>
 
         <Text style={styles.version}>PERFLORA APP VERSION 1.0.0</Text>
-      </View>
-    </ScrollView>
-  );
-}
-
-//////////////////// COMPONENTES ////////////////////
-
-function MenuItem({ icon, title, subtitle, isOpen, onPress, children }) {
-  return (
-    <View>
-      <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-        <View style={styles.menuIcon}>
-          <Ionicons name={icon} size={20} color={COLORS.onSecondary} />
-        </View>
-
-        <View style={{ flex: 1 }}>
-          <Text style={styles.menuTitle}>{title}</Text>
-          <Text style={styles.menuSubtitle}>{subtitle}</Text>
-        </View>
-
-        <Ionicons name={isOpen ? "chevron-up" : "chevron-forward"} size={18} />
-      </TouchableOpacity>
-
-      {isOpen && <View style={styles.dropdown}>{children}</View>}
+      </ScrollView>
     </View>
   );
 }
 
-function PersonalInfo({ user }) {
+function SettingsCard({ icon, title, subtitle, isOpen, onPress, children }) {
+  return (
+    <View style={[styles.settingsCard, isOpen && styles.settingsCardOpen]}>
+      <TouchableOpacity style={styles.settingsHeader} onPress={onPress} activeOpacity={0.85}>
+        <View style={styles.settingsIcon}>
+          <Ionicons name={icon} size={24} color={COLORS.primary} />
+        </View>
+
+        <View style={styles.settingsCopy}>
+          <Text style={styles.settingsTitle}>{title}</Text>
+          <Text style={styles.settingsSubtitle}>{subtitle}</Text>
+        </View>
+
+        <Ionicons
+          name={isOpen ? "chevron-down" : "chevron-forward"}
+          size={22}
+          color="#111827"
+        />
+      </TouchableOpacity>
+
+      {isOpen ? <View style={styles.expandedContent}>{children}</View> : null}
+    </View>
+  );
+}
+
+function PersonalInfo({ user, onUserChange, onPickImage }) {
   const [name, setName] = useState(user?.displayName || "");
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
 
+  useEffect(() => {
+    setName(user?.displayName || "");
+  }, [user?.displayName]);
+
   const handleSave = async () => {
     if (!auth.currentUser) return;
 
-    try {
-      await updateProfile(auth.currentUser, {
-        displayName: name,
-      });
-
-      setIsError(false);
-      setMessage("Nombre actualizado correctamente");
-    } catch (error) {
+    if (!name.trim()) {
       setIsError(true);
-      setMessage("Error al actualizar el nombre");
+      setMessage("El nombre no puede estar vacio");
+      return;
+    }
+
+    try {
+      await updateProfile(auth.currentUser, { displayName: name.trim() });
+      onUserChange({ ...auth.currentUser, displayName: name.trim() });
+      setIsError(false);
+      setMessage("Informacion actualizada correctamente");
+    } catch (_error) {
+      setIsError(true);
+      setMessage("Error al actualizar la informacion");
     }
   };
 
   return (
-    <View>
-      <Text>Nombre</Text>
-      <TextInput value={name} onChangeText={setName} style={styles.input} />
-
-      <Text>Correo</Text>
-      <TextInput value={user?.email} editable={false} style={styles.input} />
-
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-        <Text style={{ color: "white" }}>Guardar</Text>
+    <View style={styles.form}>
+      <TouchableOpacity style={styles.photoAction} onPress={onPickImage} activeOpacity={0.85}>
+        <Ionicons name="image-outline" size={18} color={COLORS.primary} />
+        <Text style={styles.photoActionText}>Cambiar imagen de perfil</Text>
       </TouchableOpacity>
-      {message !== "" && (
-        <Text style={{ color: isError ? "red" : "green", marginTop: 5 }}>
-          {message}
-        </Text>
-      )}
+
+      <Field label="Nombre completo">
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          placeholder="Tu nombre"
+          placeholderTextColor="#7b8577"
+          style={styles.input}
+        />
+      </Field>
+
+      <Field label="Correo electronico">
+        <TextInput
+          value={user?.email || ""}
+          editable={false}
+          style={[styles.input, styles.disabledInput]}
+        />
+      </Field>
+
+      <Field label="Rol en el jardin">
+        <TextInput
+          value="Cuidador principal"
+          editable={false}
+          style={[styles.input, styles.disabledInput]}
+        />
+      </Field>
+
+      <SaveButton label="Guardar cambios" onPress={handleSave} />
+      <StatusMessage message={message} isError={isError} />
     </View>
   );
 }
 
 function SecuritySection() {
-  const [password, setPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handleChangePassword = async () => {
-    if (!auth.currentUser) return;
+    const currentUser = auth.currentUser;
+    if (!currentUser?.email) return;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setIsError(true);
+      setMessage("Completa todos los campos");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setIsError(true);
+      setMessage("La nueva contrasena debe tener minimo 6 caracteres");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setIsError(true);
+      setMessage("La confirmacion no coincide con la nueva contrasena");
+      return;
+    }
 
     try {
-      await updatePassword(auth.currentUser, password);
-
+      setSaving(true);
+      const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+      await reauthenticateWithCredential(currentUser, credential);
+      await updatePassword(currentUser, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
       setIsError(false);
-      setMessage("Contraseña actualizada correctamente");
-      setPassword("");
+      setMessage("Contrasena actualizada correctamente");
     } catch (error) {
       setIsError(true);
 
-      let msg = "Error al actualizar la contraseña";
-
-      if (error.code === "auth/weak-password") {
-        msg = "Mínimo 6 caracteres";
+      if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
+        setMessage("La contrasena actual no es correcta");
+      } else if (error.code === "auth/weak-password") {
+        setMessage("La nueva contrasena es demasiado debil");
       } else if (error.code === "auth/requires-recent-login") {
-        msg = "Debes iniciar sesión otra vez";
+        setMessage("Vuelve a iniciar sesion para confirmar este cambio");
+      } else {
+        setMessage("No se pudo actualizar la contrasena");
       }
-
-      setMessage(msg);
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <View>
-      <Text>Nueva contraseña</Text>
-      <TextInput
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-        style={styles.input}
-      />
+    <View style={styles.form}>
+      <Field label="Contrasena actual">
+        <TextInput
+          secureTextEntry
+          value={currentPassword}
+          onChangeText={setCurrentPassword}
+          placeholder="Ingresa tu contrasena actual"
+          placeholderTextColor="#7b8577"
+          style={styles.input}
+        />
+      </Field>
 
-      <TouchableOpacity style={styles.saveBtn} onPress={handleChangePassword}>
-        <Text style={{ color: "white" }}>Actualizar</Text>
-      </TouchableOpacity>
-      {message !== "" && (
-        <Text style={{ color: isError ? "red" : "green", marginTop: 5 }}>
-          {message}
-        </Text>
-      )}
+      <Field label="Nueva contrasena">
+        <TextInput
+          secureTextEntry
+          value={newPassword}
+          onChangeText={setNewPassword}
+          placeholder="Minimo 6 caracteres"
+          placeholderTextColor="#7b8577"
+          style={styles.input}
+        />
+      </Field>
+
+      <Field label="Confirmar nueva contrasena">
+        <TextInput
+          secureTextEntry
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          placeholder="Repite la nueva contrasena"
+          placeholderTextColor="#7b8577"
+          style={styles.input}
+        />
+      </Field>
+
+      <SaveButton
+        label={saving ? "Actualizando..." : "Actualizar contrasena"}
+        onPress={handleChangePassword}
+        disabled={saving}
+      />
+      <StatusMessage message={message} isError={isError} />
     </View>
   );
 }
 
 function NotificationsSection() {
-  return <NotificationsSettings />;
-}
-
-function NotificationsSettings() {
-  const [freq, setFreq] = useState(null); // null = default 300 (5 horas), 'off' = off, number = minutos
+  const [freq, setFreq] = useState(null);
   const [saving, setSaving] = useState(false);
+  const enabled = freq !== "off";
   const options = [
-    { value: "off", label: "Desactivar notificaciones" },
-    { value: 240, label: "4 horas" },
-    { value: 360, label: "6 horas" },
-    { value: 480, label: "8 horas" },
-    { value: 600, label: "10 horas" },
+    { value: null, label: "Cada 5 horas" },
+    { value: 240, label: "Cada 4 horas" },
+    { value: 360, label: "Cada 6 horas" },
+    { value: 480, label: "Cada 8 horas" },
+    { value: 600, label: "Cada 10 horas" },
   ];
 
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const NotificationUtils = (await import("../../src/utils/notificationUtils")).default;
       const current = await NotificationUtils.getSavedFrequency();
-      if (!mounted) return;
-      setFreq(current === null ? null : current);
+      if (mounted) setFreq(current);
     })();
-    return () => (mounted = false);
+    return () => {
+      mounted = false;
+    };
   }, []);
-
-  const handleSelect = (v) => setFreq(v);
 
   const handleSave = async () => {
     setSaving(true);
-    const NotificationUtils = (await import("../../src/utils/notificationUtils")).default;
     await NotificationUtils.setSavedFrequency(freq);
-    // Re-schedule notifications with new frequency
     await NotificationUtils.scheduleNextNotifications().catch(() => {});
     setSaving(false);
   };
 
   return (
-    <View style={{ paddingVertical: 10 }}>
-      <Text style={{ color: COLORS.onSurfaceVariant, fontSize: 13, marginBottom: 10 }}>
-        Recordatorios periódicos (predeterminado: 5 horas)
-      </Text>
+    <View style={styles.form}>
+      <View style={styles.switchRow}>
+        <View>
+          <Text style={styles.switchTitle}>Recordatorios de cuidado</Text>
+          <Text style={styles.switchSubtitle}>Alertas para actividades pendientes</Text>
+        </View>
+        <Switch
+          value={enabled}
+          onValueChange={(value) => setFreq(value ? null : "off")}
+          trackColor={{ false: "#e5e7eb", true: "#dff2d2" }}
+          thumbColor={enabled ? COLORS.primary : "#f4f4f5"}
+        />
+      </View>
 
-      {options.map((opt) => (
-        <TouchableOpacity
-          key={String(opt.value)}
-          style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8 }}
-          onPress={() => handleSelect(opt.value)}
-        >
-          <View
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: 9,
-              borderWidth: 1,
-              borderColor: COLORS.primary,
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 10,
-            }}
-          >
-            {((opt.value === "off" && freq === "off") || (opt.value !== "off" && freq === opt.value)) && (
-              <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.primary }} />
-            )}
-          </View>
+      {enabled ? (
+        <View style={styles.optionGroup}>
+          {options.map((option) => (
+            <TouchableOpacity
+              key={String(option.value)}
+              style={styles.radioRow}
+              onPress={() => setFreq(option.value)}
+              activeOpacity={0.85}
+            >
+              <View style={styles.radioOuter}>
+                {freq === option.value ? <View style={styles.radioInner} /> : null}
+              </View>
+              <Text style={styles.radioLabel}>{option.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : null}
 
-          <Text style={{ fontSize: 15 }}>
-            {opt.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
-
-      <TouchableOpacity style={[styles.saveBtn, { marginTop: 12 }]} onPress={handleSave} disabled={saving}>
-        <Text style={{ color: "white" }}>{saving ? "Guardando..." : "Guardar"}</Text>
-      </TouchableOpacity>
+      <SaveButton label={saving ? "Guardando..." : "Guardar preferencias"} onPress={handleSave} disabled={saving} />
     </View>
   );
-
 }
 
-//////////////////// ESTILOS ////////////////////
+function PoliciesTermsSection() {
+  return (
+    <View style={styles.legalContent}>
+      <Text style={styles.legalTitle}>Politica de privacidad</Text>
+      <Text style={styles.legalText}>
+        Perflora usa tu correo, nombre, foto de perfil y datos de tus plantas para
+        crear tu cuenta, mostrar tu jardin, programar recordatorios y mejorar tu
+        experiencia dentro de la app. Las imagenes que agregas se usan para
+        identificar o registrar plantas y no se venden a terceros.
+      </Text>
+      <Text style={styles.legalText}>
+        Puedes actualizar tu informacion desde este perfil. Si cierras sesion, tus
+        datos siguen asociados a tu cuenta para que puedas recuperarlos al iniciar
+        sesion de nuevo. Las notificaciones pueden desactivarse en cualquier momento.
+      </Text>
+
+      <Text style={styles.legalTitle}>Terminos de uso</Text>
+      <Text style={styles.legalText}>
+        Perflora ofrece recomendaciones y recordatorios de cuidado como apoyo
+        informativo. Las necesidades reales de una planta pueden variar por clima,
+        sustrato, luz, plagas y condiciones del hogar, asi que las sugerencias no
+        sustituyen una revision profesional cuando la planta presenta danos severos.
+      </Text>
+      <Text style={styles.legalText}>
+        Al usar la app aceptas mantener informacion veraz en tu cuenta, no subir
+        contenido ofensivo o ilegal y usar las funciones de identificacion y
+        calendario de forma responsable. Perflora puede ajustar funciones para
+        mejorar seguridad, estabilidad y calidad del servicio.
+      </Text>
+    </View>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      {children}
+    </View>
+  );
+}
+
+function SaveButton({ label, onPress, disabled }) {
+  return (
+    <TouchableOpacity
+      style={[styles.saveButton, disabled && styles.disabledButton]}
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.85}
+    >
+      <Text style={styles.saveButtonText}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function StatusMessage({ message, isError }) {
+  if (!message) return null;
+  return (
+    <Text style={[styles.statusMessage, isError ? styles.errorText : styles.successText]}>
+      {message}
+    </Text>
+  );
+}
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: "#f4f7f2",
+    backgroundColor: "#f8f9f4",
   },
-
   content: {
-    padding: 20,
+    padding: 16,
+    paddingBottom: 36,
   },
-
-  profileCard: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 20,
-    alignItems: "center",
-    marginBottom: 20,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-
-  avatarContainer: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: COLORS.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 50,
-  },
-
-  section: {
-    marginBottom: 20,
-  },
-
-  name: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1b1b1b",
-    marginTop: 12,
-  },
-
-  email: {
-    color: "#888",
-    marginTop: 4,
-  },
-
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 12,
-    marginTop: 8,
-  },
-
-  menuItem: {
+  profileHero: {
+    minHeight: 150,
+    backgroundColor: "#fbfef6",
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 26,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    padding: 16,
-    backgroundColor: "white",
-    borderRadius: 12,
-    marginBottom: 10,
-    elevation: 1,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#e7efd9",
+    elevation: 2,
     shadowColor: "#000",
     shadowOpacity: 0.08,
-    shadowRadius: 3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
-
-  menuIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.primaryLight,
+  avatarShell: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 18,
+  },
+  avatar: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+  },
+  heroText: {
+    flex: 1,
+    zIndex: 2,
+  },
+  name: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: "#1b1b1b",
+  },
+  email: {
+    color: "#7b7f78",
+    fontSize: 13,
+    marginTop: 6,
+  },
+  plantsBadge: {
+    alignSelf: "flex-start",
+    marginTop: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(167, 201, 87, 0.16)",
+    color: COLORS.primary,
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  heroIconBadge: {
+    position: "absolute",
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    right: 14,
+    bottom: 18,
+    backgroundColor: "rgba(167, 201, 87, 0.14)",
     alignItems: "center",
     justifyContent: "center",
   },
-
-  dropdown: {
-    padding: 14,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    marginBottom: 10,
+  heroPlantEmoji: {
+    fontSize: 40,
+    lineHeight: 46,
   },
-
-  input: {
-    backgroundColor: "#f1f1f1",
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-
-  saveBtn: {
-    backgroundColor: COLORS.primary,
-    padding: 10,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-
-  toggle: {
-    padding: 10,
-    backgroundColor: "#eee",
-    borderRadius: 10,
-  },
-
-  stats: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 20,
-  },
-
-  cardPrimary: {
-    flex: 1,
-    backgroundColor: "white",
-    padding: 16,
-    borderRadius: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
-  },
-
-  cardSecondary: {
-    flex: 1,
-    backgroundColor: "white",
-    padding: 16,
-    borderRadius: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    borderLeftWidth: 4,
-    borderLeftColor: "#ff9800",
-  },
-
-  statNumber: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1b1b1b",
-    marginTop: 8,
-  },
-
-  statText: {
-    fontSize: 12,
-    color: "#888",
-    marginTop: 4,
-  },
-
-  menuTitle: {
+  sectionTitle: {
+    color: COLORS.primary,
     fontSize: 16,
-    fontWeight: "600",
-    color: "#1b1b1b",
+    fontWeight: "900",
+    marginBottom: 12,
+    marginLeft: 2,
   },
-
-  menuSubtitle: {
+  settingsCard: {
+    backgroundColor: "white",
+    borderRadius: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#edf1ea",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    overflow: "hidden",
+  },
+  settingsCardOpen: {
+    borderColor: "#dfead6",
+  },
+  settingsHeader: {
+    minHeight: 78,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  settingsIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#eaf7df",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  settingsCopy: {
+    flex: 1,
+  },
+  settingsTitle: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#1f2420",
+  },
+  settingsSubtitle: {
+    color: "#7c8279",
+    fontSize: 12,
+    marginTop: 5,
+  },
+  expandedContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f3ed",
+  },
+  form: {
+    paddingTop: 14,
+  },
+  field: {
+    marginBottom: 13,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#324036",
+    marginBottom: 7,
+  },
+  input: {
+    minHeight: 46,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    backgroundColor: "rgba(167, 201, 87, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(52, 93, 37, 0.16)",
+    color: COLORS.onSurface,
+  },
+  disabledInput: {
+    color: "#6f766d",
+    backgroundColor: "#f3f6ef",
+  },
+  photoAction: {
+    minHeight: 44,
+    borderRadius: 12,
+    backgroundColor: "#f3faed",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 14,
+  },
+  photoActionText: {
+    color: COLORS.primary,
+    fontWeight: "900",
     fontSize: 13,
-    color: "#888",
+  },
+  saveButton: {
+    minHeight: 46,
+    borderRadius: 13,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 2,
   },
-
-  iconBg: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    opacity: 0.3,
+  disabledButton: {
+    opacity: 0.6,
   },
-
-  logoutBtn: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-    padding: 14,
-    backgroundColor: "white",
-    borderRadius: 12,
+  saveButtonText: {
+    color: "white",
+    fontWeight: "900",
+  },
+  statusMessage: {
     marginTop: 10,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
+    fontSize: 12,
+    fontWeight: "800",
+    textAlign: "center",
   },
-
+  errorText: {
+    color: COLORS.error,
+  },
+  successText: {
+    color: COLORS.primary,
+  },
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
+  },
+  switchTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#243126",
+  },
+  switchSubtitle: {
+    fontSize: 12,
+    color: "#7c8279",
+    marginTop: 4,
+  },
+  optionGroup: {
+    backgroundColor: "#f8faf5",
+    borderRadius: 12,
+    padding: 8,
+    marginBottom: 12,
+  },
+  radioRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  radioOuter: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.primary,
+  },
+  radioLabel: {
+    fontSize: 14,
+    color: "#253025",
+    fontWeight: "600",
+  },
+  legalContent: {
+    paddingTop: 14,
+  },
+  legalTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: COLORS.primary,
+    marginBottom: 8,
+  },
+  legalText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#566052",
+    marginBottom: 12,
+  },
+  logoutButton: {
+    minHeight: 62,
+    borderRadius: 14,
+    backgroundColor: "#fff7f7",
+    borderWidth: 1,
+    borderColor: "#ffdede",
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
   logoutText: {
     color: COLORS.error,
-    fontWeight: "bold",
-    fontSize: 16,
+    fontWeight: "900",
+    fontSize: 15,
   },
-
   version: {
     textAlign: "center",
     fontSize: 10,
-    marginTop: 10,
-    color: COLORS.onSurfaceVariant,
+    marginTop: 14,
+    color: "#8a9186",
+    fontWeight: "700",
   },
 });

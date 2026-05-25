@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo_perflora.png",
-    "scheme": ["perflora", "com.arley_col.Perflora"],
+    "scheme": [
+      "perflora",
+      "com.arley_col.Perflora"
+    ],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -32,17 +35,18 @@
               "host": "*.redirect.activity.compat"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
-
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logoApp.png",
         "backgroundImage": "./assets/images/logoApp.png",
         "monochromeImage": "./assets/images/logoApp.png",
         "backgroundColor": "#ebffe7"
       },
-
       "predictiveBackGestureEnabled": false,
       "package": "com.arley_col.Perflora"
     },
@@ -50,34 +54,33 @@
       "output": "static",
       "favicon": "./assets/images/logoApp.png"
     },
-   "plugins": [
-  "expo-router",
-  "expo-web-browser",
-  "expo-updates",
-  [
-    "expo-splash-screen",
-    {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#F8F6EF",
-      "imageWidth": 288,
-      "android": {
-        "drawable": {
-          "icon": "./assets/images/transparent-splash-icon.xml"
-        },
-        "backgroundColor": "#F8F6EF"
-      }
-    }
-  ]
-],
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      "expo-updates",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#F8F6EF",
+          "imageWidth": 288,
+          "android": {
+            "drawable": {
+              "icon": "./assets/images/transparent-splash-icon.xml"
+            },
+            "backgroundColor": "#F8F6EF"
+          }
+        }
+      ]
+    ],
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/201495ec-a039-4a94-8189-ab7bb335c999"
+      "fallbackToCacheTimeout": 0
     },
     "experiments": {
       "typedRoutes": true,
@@ -86,8 +89,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "201495ec-a039-4a94-8189-ab7bb335c999"
+        "projectId": "af4541e0-781e-48ce-be07-84249205eff0"
       }
-    }
+    },
+    "owner": "cater20"
   }
 }

@@ -364,10 +364,10 @@ function NotificationsSection() {
   const enabled = freq !== "off";
   const options = [
     { value: null, label: "Cada 5 horas" },
-    { value: 240, label: "Cada 4 horas" },
-    { value: 360, label: "Cada 6 horas" },
-    { value: 480, label: "Cada 8 horas" },
-    { value: 600, label: "Cada 10 horas" },
+    { value: 4, label: "Cada 4 horas" },
+    { value: 6, label: "Cada 6 horas" },
+    { value: 8, label: "Cada 8 horas" },
+    { value: 10, label: "Cada 10 horas" },
   ];
 
   useEffect(() => {

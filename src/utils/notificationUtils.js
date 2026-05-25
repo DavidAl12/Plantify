@@ -4,6 +4,7 @@ import { collection, doc, getDocs, setDoc } from "firebase/firestore";
 import { Platform } from "react-native";
 import { auth, db } from "../config/firebase";
 import { generateFullSchedule } from "../utils/calendarUtils";
+import { formatLocalDate } from "../utils/dateUtils";
 
 // Configuración básica (necesaria para que la app no explote si algo llama a Notifications)
 Notifications.setNotificationHandler({
@@ -15,7 +16,8 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const STORAGE_KEY = "notificationFrequencyHours"; // 'off' | null(default 5) | number
+const STORAGE_KEY = "notificationFrequencyHours"; // 'off' | null(default 5) | hours
+const DEFAULT_REMINDER_HOURS = 5;
 
 async function saveNotificationToFirestoreToken(token) {
   try {
@@ -76,8 +78,9 @@ export async function getSavedFrequency() {
     if (v === null) return null; // default 5
     if (v === "off") return "off";
     const n = Number(v);
-    return Number.isNaN(n) ? null : n;
-  } catch (e) {
+    if (Number.isNaN(n)) return null;
+    return n > 24 ? n / 60 : n;
+  } catch (_e) {
     return null;
   }
 }
@@ -143,11 +146,11 @@ export async function scheduleNextNotifications(days = 7) {
     // Schedule daily summaries and advance (tomorrow) summaries for next `days`
     for (let i = 0; i < days; i++) {
       const target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-      const dateStr = target.toISOString().slice(0, 10);
+      const dateStr = formatLocalDate(target);
 
-      // Daily summary for target day (at 09:00 local)
+      // Daily summary for target day (at 08:00 local)
       const todaysTasks = schedule[dateStr] || [];
-      const dailyTrigger = scheduleAtLocalTime(target, 9, 0);
+      const dailyTrigger = scheduleAtLocalTime(target, 8, 0);
       if (todaysTasks.length > 0 && isFutureTrigger(dailyTrigger)) {
         const content = {
           title: "🌱 Tareas de hoy",
@@ -168,7 +171,7 @@ export async function scheduleNextNotifications(days = 7) {
 
       // Advance notification: for tasks in (target + 1), deliver at 19:00 on the current day
       const next = new Date(target.getFullYear(), target.getMonth(), target.getDate() + 1);
-      const nextStr = next.toISOString().slice(0, 10);
+      const nextStr = formatLocalDate(next);
       const tomorrowsTasks = schedule[nextStr] || [];
       const advanceTrigger = scheduleAtLocalTime(target, 19, 0);
       if (tomorrowsTasks.length > 0 && isFutureTrigger(advanceTrigger)) {
@@ -190,13 +193,13 @@ export async function scheduleNextNotifications(days = 7) {
       }
     }
 
-    // Schedule periodic reminders based on saved frequency (default 300 minutes = 5 horas)
+    // Schedule periodic reminders based on saved frequency (default 5 horas)
     const freq = await getSavedFrequency();
     if (freq === "off") return;
-    const minutes = freq === null ? 300 : Number(freq); // null = default 5 horas (300 minutos)
-    if (Number.isFinite(minutes) && minutes > 0) {
-      const seconds = minutes * 60; // Convert minutes to seconds
-      console.log(`Scheduling periodic reminder every ${minutes} minutes (${seconds} seconds)`);
+    const hours = freq === null ? DEFAULT_REMINDER_HOURS : Number(freq);
+    if (Number.isFinite(hours) && hours > 0) {
+      const seconds = hours * 60 * 60;
+      console.log(`Scheduling periodic reminder every ${hours} hours (${seconds} seconds)`);
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "💧 Recordatorio de Perflora",
@@ -243,10 +246,10 @@ export async function sendPlantTaskTestNotification() {
     const { plants, completedTasks } = await fetchUserPlantsAndCompletedTasks();
     const schedule = generateFullSchedule(plants, completedTasks || []);
     const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10);
+    const todayStr = formatLocalDate(now);
     const tomorrow = new Date(now);
     tomorrow.setDate(now.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+    const tomorrowStr = formatLocalDate(tomorrow);
     const todayTasks = schedule[todayStr] || [];
     const tomorrowTasks = schedule[tomorrowStr] || [];
 
@@ -323,7 +326,7 @@ export async function saveNotificationToHistory(title, body, date, data = {}) {
       id: Date.now().toString(),
       title,
       body,
-      date: date || new Date().toISOString().slice(0, 10),
+      date: date || formatLocalDate(new Date()),
       timestamp: Date.now(),
       data,
       viewed: false,
@@ -365,7 +368,7 @@ export async function hasUnviewedNotifications() {
   try {
     const history = await getNotificationHistory();
     return history.some((notif) => !notif.viewed);
-  } catch (e) {
+  } catch (_e) {
     return false;
   }
 }

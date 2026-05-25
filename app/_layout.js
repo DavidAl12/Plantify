@@ -8,6 +8,7 @@ import { ImageBackground, StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { auth } from "../src/config/firebase";
 import { AlertProvider } from "../src/context/AlertContext";
+import { formatLocalDate } from "../src/utils/dateUtils";
 import * as NotificationUtils from "../src/utils/notificationUtils";
 
 const SPLASH_DURATION_MS = 4500;
@@ -82,7 +83,7 @@ export default function RootLayout() {
         const { title, body, data } = notification.content;
         // Solo guardar si no es periódica
         if (data?.type !== "periodic_summary") {
-          const date = data?.date || new Date().toISOString().slice(0, 10);
+          const date = data?.date || formatLocalDate(new Date());
           await NotificationUtils.saveNotificationToHistory(title, body, date, data);
         }
       }

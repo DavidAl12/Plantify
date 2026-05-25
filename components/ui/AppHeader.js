@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  AppState,
   Image,
   Modal,
   ScrollView,
@@ -13,114 +15,176 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { hasUnviewedNotifications, markNotificationsAsViewed } from "../../src/utils/notificationUtils";
 import { COLORS } from "../../styles/colors";
+
+const NOTIFICATION_INBOX_KEY = "perfloraNotificationInbox";
+const MAX_STORED_NOTIFICATIONS = 60;
+
+const toDateKey = (value) => {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseDateKey = (dateKey) => {
+  if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return null;
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const formatSectionDate = (dateKey) => {
+  const date = parseDateKey(dateKey);
+  if (!date) return "Sin fecha";
+
+  const todayKey = toDateKey(Date.now());
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (dateKey === todayKey) return "Hoy";
+  if (dateKey === toDateKey(yesterday)) return "Ayer";
+
+  return date.toLocaleDateString("es-CO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+const formatNotificationTime = (timestamp) => {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toLocaleTimeString("es-CO", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const normalizeNotification = (notification) => {
+  const request = notification?.request;
+  const content = request?.content;
+  if (!request || !content) return null;
+
+  const receivedAt = notification.date || Date.now();
+  const dataDate = typeof content.data?.date === "string" ? content.data.date : null;
+  const dateKey = dataDate || toDateKey(receivedAt);
+  const title = content.title || "Perflora";
+  const body = content.body || "";
+
+  if (!title && !body) return null;
+
+  return {
+    id: `${request.identifier}-${receivedAt}`,
+    requestId: request.identifier,
+    title,
+    body,
+    dateKey,
+    receivedAt,
+    type: content.data?.type || "notification",
+  };
+};
+
+const mergeNotificationLists = (items) => {
+  const unique = new Map();
+
+  items
+    .filter(Boolean)
+    .sort((a, b) => b.receivedAt - a.receivedAt)
+    .forEach((item) => {
+      if (!unique.has(item.id)) unique.set(item.id, item);
+    });
+
+  return Array.from(unique.values()).slice(0, MAX_STORED_NOTIFICATIONS);
+};
 
 export default function AppHeader({ showBack = false }) {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [notificationHistory, setNotificationHistory] = useState([]);
-  const [hasUnviewed, setHasUnviewed] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [hasLoadedNotifications, setHasLoadedNotifications] = useState(false);
 
   // Cargar historial de notificaciones
   useEffect(() => {
-    const loadHistory = async () => {
+    const syncPresentedNotifications = async () => {
       try {
-        const data = await AsyncStorage.getItem("notificationHistory");
-        if (data) {
-          setNotificationHistory(JSON.parse(data));
-        }
-      } catch (e) {
-        console.log("Error cargando historial:", e);
+        const presented = await Notifications.getPresentedNotificationsAsync();
+        const incoming = presented.map(normalizeNotification).filter(Boolean);
+        if (incoming.length === 0) return;
+
+        setNotifications((current) => mergeNotificationLists([...incoming, ...current]));
+      } catch (error) {
+        console.log("Error sincronizando notificaciones:", error);
       }
     };
 
-    loadHistory();
-  }, []);
-
-  // Verificar si hay notificaciones sin ver (periodicamente)
-  useEffect(() => {
-    const checkUnviewed = async () => {
+    const initializeNotifications = async () => {
       try {
-        const hasUnviewed = await hasUnviewedNotifications();
-        setHasUnviewed(hasUnviewed);
-      } catch (e) {
-        console.log("Error verificando notificaciones sin ver:", e);
+        const stored = await AsyncStorage.getItem(NOTIFICATION_INBOX_KEY);
+        const storedItems = stored ? JSON.parse(stored) : [];
+        const presented = await Notifications.getPresentedNotificationsAsync();
+        const presentedItems = presented.map(normalizeNotification).filter(Boolean);
+
+        setNotifications((current) => (
+          mergeNotificationLists([...presentedItems, ...storedItems, ...current])
+        ));
+      } catch (error) {
+        console.log("Error cargando notificaciones:", error);
+      } finally {
+        setHasLoadedNotifications(true);
       }
     };
 
-    checkUnviewed();
-    const interval = setInterval(checkUnviewed, 2000); // Verificar cada 2 segundos
+    initializeNotifications();
 
-    return () => clearInterval(interval);
-  }, []);
+    const receivedSubscription = Notifications.addNotificationReceivedListener((notification) => {
+      const item = normalizeNotification(notification);
+      if (!item) return;
 
-  // Cuando se abre el modal, marcar como visto
-  const handleOpenMenu = useCallback(async () => {
-    setIsMenuOpen(true);
-    await markNotificationsAsViewed();
-    setHasUnviewed(false);
-    
-    // Recargar historial
-    try {
-      const data = await AsyncStorage.getItem("notificationHistory");
-      if (data) {
-        setNotificationHistory(JSON.parse(data));
-      }
-    } catch (e) {
-      console.log("Error recargando historial:", e);
-    }
-  }, []);
-
-  // Agrupar notificaciones por fecha - SOLO mostrar las que ya llegaron
-  const notificationsByDate = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    const grouped = {};
-    
-    notificationHistory
-      .filter((n) => n.data?.type !== "periodic_summary") // Excluir recordatorios periódicos
-      .filter((n) => n.date <= today) // Solo mostrar notificaciones que ya llegaron
-      .forEach((notif) => {
-        const date = notif.date || new Date(notif.timestamp).toISOString().slice(0, 10);
-        if (!grouped[date]) {
-          grouped[date] = [];
-        }
-        grouped[date].push(notif);
-      });
-
-    // Ordenar fechas en orden descendente (más recientes primero)
-    return Object.entries(grouped)
-      .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
-      .reduce((acc, [date, notifs]) => {
-        acc[date] = notifs;
-        return acc;
-      }, {});
-  }, [notificationHistory]);
-
-  const formatDate = (dateStr) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-
-    if (dateStr === today) return { label: "Hoy", type: "today" };
-    if (dateStr === yesterday) return { label: "Ayer", type: "yesterday" };
-
-    const date = new Date(dateStr);
-    const formatted = date.toLocaleDateString("es-ES", {
-      month: "short",
-      day: "numeric",
+      setNotifications((current) => mergeNotificationLists([item, ...current]));
     });
-    return { label: formatted, type: "other" };
-  };
 
-  // Determinar tipo de notificación
-  const getNotificationType = (notif) => {
-    if (notif.data?.type === "daily_summary" || notif.data?.type === "daily_summary_test") {
-      return "today";
-    }
-    if (notif.data?.type === "advance_summary" || notif.data?.type === "advance_summary_test") {
-      return "tomorrow";
-    }
-    return "other";
+    const appStateSubscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") syncPresentedNotifications();
+    });
+
+    return () => {
+      receivedSubscription.remove();
+      appStateSubscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedNotifications) return;
+
+    AsyncStorage.setItem(
+      NOTIFICATION_INBOX_KEY,
+      JSON.stringify(notifications),
+    ).catch((error) => console.log("Error guardando notificaciones:", error));
+  }, [hasLoadedNotifications, notifications]);
+
+  const groupedNotifications = useMemo(() => {
+    return notifications.reduce((groups, notification) => {
+      const dateKey = notification.dateKey || toDateKey(notification.receivedAt);
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push(notification);
+      return groups;
+    }, {});
+  }, [notifications]);
+
+  const notificationDates = useMemo(() => {
+    return Object.keys(groupedNotifications).sort((a, b) => {
+      const first = parseDateKey(a)?.getTime() || 0;
+      const second = parseDateKey(b)?.getTime() || 0;
+      return second - first;
+    });
+  }, [groupedNotifications]);
+
+  const handleOpenMenu = () => {
+    setIsMenuOpen(true);
   };
 
   return (
@@ -160,7 +224,7 @@ export default function AppHeader({ showBack = false }) {
             size={22}
             color={COLORS.onSurface}
           />
-          {hasUnviewed && (
+          {notifications.length > 0 && (
             <View style={styles.badge} />
           )}
         </TouchableOpacity>
@@ -178,35 +242,35 @@ export default function AppHeader({ showBack = false }) {
 
         <View style={styles.modalCard}>
           <Text style={styles.modalTitle}>Notificaciones</Text>
-          {Object.keys(notificationsByDate).length === 0 ? (
+          {notifications.length === 0 ? (
             <Text style={styles.modalText}>No tienes notificaciones.</Text>
           ) : (
-            <ScrollView style={styles.taskList}>
-              {Object.entries(notificationsByDate).map(([date, notifs]) => {
-                const dateInfo = formatDate(date);
-                return (
-                  <View key={date} style={styles.dateGroup}>
-                    <Text style={styles.dateLabel}>{dateInfo.label}</Text>
-                    {notifs.map((notif) => {
-                      const notifType = getNotificationType(notif);
-                      return (
-                        <View
-                          key={notif.id}
-                          style={[
-                            styles.notificationItem,
-                            notifType === "today" && styles.notifToday,
-                            notifType === "tomorrow" && styles.notifTomorrow,
-                            notifType === "other" && styles.notifOther,
-                          ]}
-                        >
-                          <Text style={styles.notifTitle}>{notif.title}</Text>
-                          <Text style={styles.notifBody}>{notif.body}</Text>
+            <ScrollView style={styles.notificationList} showsVerticalScrollIndicator={false}>
+              {notificationDates.map((dateKey) => (
+                <View key={dateKey} style={styles.notificationGroup}>
+                  <Text style={styles.notificationDate}>{formatSectionDate(dateKey)}</Text>
+                  {groupedNotifications[dateKey].map((notification) => (
+                    <View key={notification.id} style={styles.notificationItem}>
+                      <View style={styles.notificationDot} />
+                      <View style={styles.notificationContent}>
+                        <View style={styles.notificationTitleRow}>
+                          <Text style={styles.notificationTitle} numberOfLines={2}>
+                            {notification.title}
+                          </Text>
+                          <Text style={styles.notificationTime}>
+                            {formatNotificationTime(notification.receivedAt)}
+                          </Text>
                         </View>
-                      );
-                    })}
-                  </View>
-                );
-              })}
+                        {!!notification.body && (
+                          <Text style={styles.notificationBody}>
+                            {notification.body}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ))}
             </ScrollView>
           )}
         </View>
@@ -306,67 +370,66 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  taskList: {
+  notificationList: {
     marginTop: 4,
   },
 
-  dateGroup: {
-    marginBottom: 12,
+  notificationGroup: {
+    marginBottom: 14,
   },
 
-  dateLabel: {
-    fontSize: 12,
-    fontWeight: "600",
+  notificationDate: {
     color: COLORS.primary,
-    marginBottom: 8,
-    marginTop: 8,
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 6,
   },
 
   notificationItem: {
+    flexDirection: "row",
     paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    marginBottom: 6,
-    borderLeftWidth: 4,
-  },
-
-  notifToday: {
-    backgroundColor: "#e8f5e9",
-    borderLeftColor: "#2e7d32",
-  },
-
-  notifTomorrow: {
-    backgroundColor: "#fff8e1",
-    borderLeftColor: "#f57f17",
-  },
-
-  notifOther: {
-    backgroundColor: "#f5f5f5",
-    borderLeftColor: "#9e9e9e",
-  },
-
-  notifTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.onSurface,
-    marginBottom: 4,
-  },
-
-  notifBody: {
-    fontSize: 12,
-    color: "#666",
-    lineHeight: 16,
-  },
-
-  taskItem: {
-    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#e5ebdb",
   },
 
-  taskItemText: {
+  notificationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.primary,
+    marginTop: 6,
+    marginRight: 10,
+  },
+
+  notificationContent: {
+    flex: 1,
+  },
+
+  notificationTitleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+
+  notificationTitle: {
+    flex: 1,
+    color: COLORS.onSurface,
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 19,
+  },
+
+  notificationTime: {
+    color: "#7d8778",
+    fontSize: 11,
+    marginTop: 2,
+  },
+
+  notificationBody: {
     color: COLORS.onSurface,
     fontSize: 14,
     lineHeight: 20,
+    marginTop: 3,
   },
 });

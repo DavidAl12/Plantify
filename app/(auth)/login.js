@@ -19,8 +19,8 @@ import {
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import { auth } from "../../src/config/firebase";
-import { COLORS } from "../../styles/colors";
 import { useSocialAuth } from "../../src/hooks/useSocialAuth";
+import { COLORS } from "../../styles/colors";
 
 export default function Login() {
   const router = useRouter();
@@ -238,12 +238,9 @@ export default function Login() {
           <View style={styles.socialColumn}>
             {/* Botón Google */}
             <TouchableOpacity
-              style={[
-                styles.socialButtonWide,
-                (loading || socialLoading) && { opacity: 0.6 }
-              ]}
+              style={styles.socialButtonWide}
               onPress={loginWithGoogle}
-              disabled={loading || socialLoading}
+              disabled={socialLoading}
             >
               <Image
                 source={require("../../assets/images/google-logo.png")}
@@ -257,12 +254,9 @@ export default function Login() {
 
             {/* Botón Microsoft */}
             <TouchableOpacity
-              style={[
-                styles.socialButtonWide,
-                (loading || socialLoading) && { opacity: 0.6 }
-              ]}
+              style={styles.socialButtonWide}
               onPress={loginWithMicrosoft}
-              disabled={loading || socialLoading}
+              disabled={socialLoading}
             >
               <Image
                 source={require("../../assets/images/microsoft-logo.png")}

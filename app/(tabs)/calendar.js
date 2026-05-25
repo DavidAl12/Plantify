@@ -495,14 +495,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
 
-  taskLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    flex: 1,
-    minWidth: 0,
-  },
-
   taskAction: {
     marginLeft: 12,
     justifyContent: "center",
@@ -520,12 +512,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-  },
-
-  taskImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
   },
 
   taskTitle: {

@@ -155,7 +155,7 @@ export default function Dashboard() {
            <View style={styles.progressBarBg}>
               <View style={[styles.progressBarFill, { width: `${Math.min(tasks.length, 100)}%` }]} />
            </View>
-           <Text style={styles.progressLabel}>{tasks.length} / 100 para el nivel "Jardinero Experto"</Text>
+           <Text style={styles.progressLabel}>{`${tasks.length} / 100 para el nivel "Jardinero Experto"`}</Text>
         </View>
 
         <View style={{ height: 40 }} />

@@ -2,24 +2,24 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-    createUserWithEmailAndPassword,
-    onAuthStateChanged,
-    updateProfile,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  updateProfile,
 } from "firebase/auth";
 import { useEffect, useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import { auth } from "../../src/config/firebase";
-import { COLORS } from "../../styles/colors";
 import { useSocialAuth } from "../../src/hooks/useSocialAuth";
+import { COLORS } from "../../styles/colors";
 
 export default function Register() {
   const router = useRouter();
@@ -262,12 +262,9 @@ export default function Register() {
         <View style={styles.socialColumn}>
           {/* Botón Google */}
           <TouchableOpacity
-            style={[
-              styles.socialButtonWide,
-              (loading || socialLoading) && { opacity: 0.6 }
-            ]}
+            style={styles.socialButtonWide}
             onPress={loginWithGoogle}
-            disabled={loading || socialLoading}
+            disabled={socialLoading}
           >
             <Image
               source={require("../../assets/images/google-logo.png")}
@@ -281,12 +278,9 @@ export default function Register() {
 
           {/* Botón Microsoft */}
           <TouchableOpacity
-            style={[
-              styles.socialButtonWide,
-              (loading || socialLoading) && { opacity: 0.6 }
-            ]}
+            style={styles.socialButtonWide}
             onPress={loginWithMicrosoft}
-            disabled={loading || socialLoading}
+            disabled={socialLoading}
           >
             <Image
               source={require("../../assets/images/microsoft-logo.png")}

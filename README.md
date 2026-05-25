@@ -82,22 +82,10 @@ Ubicación: <mark>src/services/</mark>
 * 🌱 Registro y gestión de plantas
 * 📷 Captura e identificación de plantas
 * 🧠 Sugerencias inteligentes de cuidado
-* 📚 Información automática desde Wikipedia
-* 🌍 Traducción de contenido
-* 🖼 Subida de imágenes a la nube
 * 📊 Historial de cuidados
 * 📅 Vista tipo calendario (en desarrollo/mejora)
-
----
-
-## 🔜 Funcionalidades en Desarrollo
-
 * 🔔 Notificaciones y recordatorios inteligentes
-* 📍 Ubicación en tiempo real para recomendaciones
 * 📊 Estadísticas avanzadas de cuidado
-* 🤖 Mejora del sistema de IA
-* 🌿 Diagnóstico de salud de plantas
-
 ---
 
 ## ⚙️ Instalación y Ejecución

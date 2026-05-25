@@ -1,16 +1,15 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    collection,
-    doc,
-    getDocs,
-    onSnapshot,
-    orderBy,
-    query,
-    serverTimestamp,
-    setDoc,
-    updateDoc,
-    where,
-    writeBatch
+  collection,
+  doc,
+  getDocs,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+  updateDoc,
+  where,
+  writeBatch
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
@@ -28,12 +27,13 @@ import {
 
 import { Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../../src/config/firebase";
+import { getAppNow, getAppTodayString, getFirestoreNow, parseLocalDate } from "../../src/utils/dateUtils";
 import { COLORS } from "../../styles/colors";
 
 const diasDesde = (timestamp) => {
   if (!timestamp) return null;
   const fecha = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  return Math.floor((Date.now() - fecha.getTime()) / 86400000);
+  return Math.floor((getAppNow().getTime() - fecha.getTime()) / 86400000);
 };
 
 export default function PlantDetail() {
@@ -184,20 +184,16 @@ export default function PlantDetail() {
     const user = auth.currentUser;
     if (!user || !plant) return;
 
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    const todayStr = `${year}-${month}-${day}`;
+    const todayStr = getAppTodayString();
 
     const taskId = `${id}_${type}_${todayStr}`;
 
     try {
       const updateData = {};
       if (type === "watering") {
-        updateData.lastWatered = serverTimestamp();
+        updateData.lastWatered = getFirestoreNow();
       } else {
-        updateData[`carePlan.${type}.lastDate`] = serverTimestamp();
+        updateData[`carePlan.${type}.lastDate`] = getFirestoreNow();
       }
 
       await updateDoc(doc(db, "users", user.uid, "plants", id), updateData);
@@ -207,14 +203,14 @@ export default function PlantDetail() {
         type,
         date: todayStr,
         completed: true,
-        completedAt: serverTimestamp(),
+        completedAt: getFirestoreNow(),
         name: plant.name,
         image: plant.imageUrl || null,
       });
 
       setPlant((prev) => {
         const newPlant = { ...prev };
-        const simulatedTimestamp = { toDate: () => new Date() };
+        const simulatedTimestamp = { toDate: () => getAppNow() };
         if (type === "watering") {
           newPlant.lastWatered = simulatedTimestamp;
         } else {
@@ -722,13 +718,12 @@ function TimelineItem({ icon, title, time, showDot, type }) {
 const groupTasksByDate = (tasks) => {
   const groups = {};
 
-  const now = new Date();
+  const now = getAppNow();
   now.setHours(0, 0, 0, 0); // Normalizar hoy a medianoche local
 
   tasks.forEach((task) => {
     // 1. Parsear la fecha de la tarea (YYYY-MM-DD)
-    const [year, month, day] = task.date.split("-").map(Number);
-    const taskDate = new Date(year, month - 1, day);
+    const taskDate = parseLocalDate(task.date);
     taskDate.setHours(0, 0, 0, 0); // Normalizar tarea a medianoche
 
     // 2. Calcular diferencia en días

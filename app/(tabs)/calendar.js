@@ -1,15 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
 import {
   collection,
   doc,
   onSnapshot,
-  serverTimestamp,
   setDoc,
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -25,6 +25,7 @@ import { useAlert } from "../../src/context/AlertContext";
 import { COLORS } from "../../styles/colors";
 
 import { generateFullSchedule } from "../../src/utils/calendarUtils";
+import { getAppTodayString, getFirestoreNow, parseLocalDate } from "../../src/utils/dateUtils";
 
 const TASK_COLORS = {
   watering: "#4FC3F7",
@@ -37,8 +38,7 @@ const formatDatePretty = (dateStr) => {
   if (!dateStr) return "";
 
   // 🔑 Parsear manualmente para evitar que JS lo trate como UTC
-  const [year, month, day] = dateStr.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
+  const date = parseLocalDate(dateStr);
 
   return date.toLocaleDateString("es-CO", {
     weekday: "long",
@@ -48,13 +48,8 @@ const formatDatePretty = (dateStr) => {
 };
 
 export default function CalendarScreen() {
-  const today = (() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  })();
+  const scrollRef = useRef(null);
+  const today = getAppTodayString();
 
   const { date: selectedDateParam } = useLocalSearchParams();
   const [selectedDate, setSelectedDate] = useState(() => selectedDateParam || today);
@@ -69,6 +64,12 @@ export default function CalendarScreen() {
   const [completedTasks, setCompletedTasks] = useState([]);
   const [schedule, setSchedule] = useState({});
   const { showAlert } = useAlert();
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, []),
+  );
 
   // Cargar plantas
   useEffect(() => {
@@ -142,13 +143,19 @@ export default function CalendarScreen() {
 
     Object.keys(schedule).forEach((date) => {
       const tasks = schedule[date];
-
-      // 1. Only show dots for tasks that are NOT completed!
       const pendingTasks = tasks.filter((t) => !t.completed);
-      const uniqueTypes = [...new Set(pendingTasks.map((t) => t.type))];
+      if (pendingTasks.length === 0) return;
 
-      // 2. A task is overdue if it is not completed and its date is before today
-      const hasOverdue = tasks.some((t) => !t.completed && date < today);
+      const hasOverdue = date < today;
+
+      if (hasOverdue) {
+        marks[date] = {
+          dots: [{ key: "pending_overdue", color: "#F44336" }],
+        };
+        return;
+      }
+
+      const uniqueTypes = [...new Set(pendingTasks.map((t) => t.type))];
 
       marks[date] = {
         dots: uniqueTypes.map((type) => ({
@@ -156,14 +163,6 @@ export default function CalendarScreen() {
           color: TASK_COLORS[type],
         })),
       };
-
-      if (hasOverdue) {
-        // Red dot indicator for overdue tasks
-        marks[date].dots.push({
-          key: "overdue_indicator",
-          color: "#F44336",
-        });
-      }
     });
 
     // mantener selección sin dañar fechas
@@ -176,7 +175,7 @@ export default function CalendarScreen() {
     }
 
     return marks;
-  }, [schedule, selectedDate]);
+  }, [schedule, selectedDate, today]);
 
   // 🔑 tareas del día seleccionado (NO recalcula nada)
   const selectedTasks = useMemo(() => {
@@ -184,7 +183,7 @@ export default function CalendarScreen() {
   }, [schedule, selectedDate]);
 
   const confirmTaskCompletion = (task) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getAppTodayString();
 
     if (selectedDate > today) {
       showAlert({
@@ -222,15 +221,9 @@ export default function CalendarScreen() {
     const user = auth.currentUser;
     if (!user) return;
 
-    const todayStr = (() => {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      const day = String(now.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
-    })();
+    const todayStr = getAppTodayString();
 
-    // Always record the task completed on today's actual date!
+    // Registrar la actividad en la fecha que la app considera como hoy.
     const actualTaskId = `${task.plantId}_${task.type}_${todayStr}`;
     const taskRef = doc(db, "users", user.uid, "tasks", actualTaskId);
     const plantRef = doc(db, "users", user.uid, "plants", task.plantId);
@@ -244,14 +237,14 @@ export default function CalendarScreen() {
         image: task.image || null,
         date: todayStr,
         completed: true,
-        completedAt: serverTimestamp(),
+        completedAt: getFirestoreNow(),
       });
 
       const updateData = {};
       if (task.type === "watering") {
-        updateData.lastWatered = serverTimestamp();
+        updateData.lastWatered = getFirestoreNow();
       } else {
-        updateData[`carePlan.${task.type}.lastDate`] = serverTimestamp();
+        updateData[`carePlan.${task.type}.lastDate`] = getFirestoreNow();
       }
 
       await updateDoc(plantRef, updateData);
@@ -305,10 +298,10 @@ export default function CalendarScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <AppHeader />
 
-      <View style={styles.content}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.banner}>
           <Text style={styles.bannerTitle}>Calendario</Text>
           <Text style={styles.bannerText}>
@@ -410,9 +403,8 @@ export default function CalendarScreen() {
             })
           )}
         </View>
-      </View>
-
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 

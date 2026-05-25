@@ -1,3 +1,5 @@
+import { getAppNow } from "./dateUtils";
+
 const getLatestCompletedDate = (plantId, taskType, completedTasks, plantCreatedAt) => {
   const plantTasks = completedTasks.filter(
     (t) => t.plantId === plantId && t.type === taskType && t.completed
@@ -19,7 +21,7 @@ const getLatestCompletedDate = (plantId, taskType, completedTasks, plantCreatedA
 export const generateFullSchedule = (plants, completedTasks) => {
   const schedule = {};
 
-  const endDate = new Date();
+  const endDate = getAppNow();
   endDate.setFullYear(endDate.getFullYear() + 1);
 
   plants.forEach((plant) => {
@@ -28,22 +30,22 @@ export const generateFullSchedule = (plants, completedTasks) => {
         {
           key: "watering",
           frequency: plant.wateringFrequencyDays || 3,
-          fallbackDate: plant.lastWatered || plant.createdAt || new Date(),
+          fallbackDate: plant.lastWatered || plant.createdAt || getAppNow(),
         },
         {
           key: "fertilizing",
           frequency: plant.carePlan?.fertilizing?.frequencyDays || 30,
-          fallbackDate: plant.carePlan?.fertilizing?.lastDate || plant.createdAt || new Date(),
+          fallbackDate: plant.carePlan?.fertilizing?.lastDate || plant.createdAt || getAppNow(),
         },
         {
           key: "pruning",
           frequency: plant.carePlan?.pruning?.frequencyDays || 60,
-          fallbackDate: plant.carePlan?.pruning?.lastDate || plant.createdAt || new Date(),
+          fallbackDate: plant.carePlan?.pruning?.lastDate || plant.createdAt || getAppNow(),
         },
         {
           key: "pest_control",
           frequency: plant.carePlan?.pest_control?.frequencyDays || 15,
-          fallbackDate: plant.carePlan?.pest_control?.lastDate || plant.createdAt || new Date(),
+          fallbackDate: plant.carePlan?.pest_control?.lastDate || plant.createdAt || getAppNow(),
         },
       ];
 

@@ -36,7 +36,6 @@ export default function Login() {
   const {
     loading: socialLoading,
     loginWithGoogle,
-    loginWithMicrosoft,
   } = useSocialAuth();
 
   useEffect(() => {
@@ -252,21 +251,6 @@ export default function Login() {
               </Text>
             </TouchableOpacity>
 
-            {/* Botón Microsoft */}
-            <TouchableOpacity
-              style={styles.socialButtonWide}
-              onPress={loginWithMicrosoft}
-              disabled={socialLoading}
-            >
-              <Image
-                source={require("../../assets/images/microsoft-logo.png")}
-                style={styles.socialLogo}
-                resizeMode="contain"
-              />
-              <Text style={styles.socialButtonText}>
-                {socialLoading ? "Cargando..." : "Continuar con Microsoft"}
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
 

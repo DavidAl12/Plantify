@@ -4,7 +4,7 @@
     "slug": "Perflora",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logoApp.png",
+    "icon": "./assets/images/logo_perflora.png",
     "scheme": ["perflora", "com.arley_col.Perflora"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

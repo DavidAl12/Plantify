@@ -487,32 +487,6 @@ export default function PlantDetail() {
           </View>
         </View>
 
-        {/* IA CARD */}
-        <View style={styles.aiCard}>
-          <View style={styles.aiHeader}>
-            <Ionicons name="sparkles" size={24} color="white" />
-            <Text style={styles.aiTitle}>Asistente IA</Text>
-          </View>
-          <Text style={styles.aiText}>
-            ¿Ves manchas u hojas amarillas? Deja que nuestra IA diagnostique a{" "}
-            {plant.name}.
-          </Text>
-          <TouchableOpacity
-            style={styles.aiButton}
-            onPress={() =>
-              router.push({
-                pathname: "/plant/diagnosis",
-                params: {
-                  plantName: plant.name || plant.commonNames?.[0] || "",
-                  plantId: id,
-                },
-              })
-            }
-          >
-            <Text style={styles.aiButtonText}>Detectar Problemas</Text>
-          </TouchableOpacity>
-        </View>
-
         <View style={{ height: 40 }} />
       </ScrollView>
 
@@ -987,34 +961,6 @@ const styles = StyleSheet.create({
   },
   infoTitleMini: { fontWeight: "700", fontSize: 14, color: COLORS.primary },
   infoText: { color: "#555", lineHeight: 22, fontSize: 14 },
-
-  aiCard: {
-    backgroundColor: COLORS.primary,
-    margin: 20,
-    padding: 25,
-    borderRadius: 25,
-    elevation: 5,
-  },
-  aiHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 10,
-  },
-  aiTitle: { color: "white", fontSize: 18, fontWeight: "800" },
-  aiText: {
-    color: "rgba(255,255,255,0.8)",
-    lineHeight: 22,
-    fontSize: 14,
-    marginBottom: 20,
-  },
-  aiButton: {
-    backgroundColor: "white",
-    padding: 15,
-    borderRadius: 15,
-    alignItems: "center",
-  },
-  aiButtonText: { color: COLORS.primary, fontWeight: "800" },
 
   // MODAL STYLES
   modalOverlay: {

@@ -1,4 +1,3 @@
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import {
@@ -14,17 +13,29 @@ import { OAUTH_CONFIG } from "../config/oauth";
 
 WebBrowser.maybeCompleteAuthSession();
 
-if (Platform.OS !== "web") {
-  GoogleSignin.configure({
-    webClientId: OAUTH_CONFIG.google.webClientId,
-    scopes: ["profile", "email"],
-  });
-}
-
 const microsoftDiscovery = {
   authorizationEndpoint: `https://login.microsoftonline.com/${OAUTH_CONFIG.microsoft.tenantId}/oauth2/v2.0/authorize`,
   tokenEndpoint: `https://login.microsoftonline.com/${OAUTH_CONFIG.microsoft.tenantId}/oauth2/v2.0/token`,
 };
+
+let googleSigninModule;
+
+async function getGoogleSignin() {
+  if (Platform.OS === "web") {
+    return null;
+  }
+
+  if (!googleSigninModule) {
+    const module = await import("@react-native-google-signin/google-signin");
+    googleSigninModule = module.GoogleSignin;
+    googleSigninModule.configure({
+      webClientId: OAUTH_CONFIG.google.webClientId,
+      scopes: ["profile", "email"],
+    });
+  }
+
+  return googleSigninModule;
+}
 
 export function useSocialAuth() {
   const [loading, setLoading] = useState(false);
@@ -93,6 +104,8 @@ export function useSocialAuth() {
         return;
       }
 
+      const GoogleSignin = await getGoogleSignin();
+
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       await GoogleSignin.signOut();
       const result = await GoogleSignin.signIn();
@@ -110,9 +123,14 @@ export function useSocialAuth() {
       await signInWithCredential(auth, credential);
     } catch (error) {
       console.error("Google sign in error:", error);
+      const message =
+        error.message?.includes("RNGoogleSignin")
+          ? "Google Sign-In requiere un build nativo o dev client. En Expo Go usa correo y contrasena por ahora."
+          : "No se pudo iniciar sesion con Google: " + (error.message || "intentalo de nuevo");
+
       Alert.alert(
         "Error",
-        "No se pudo iniciar sesion con Google: " + (error.message || "intentalo de nuevo")
+        message
       );
     } finally {
       setLoading(false);

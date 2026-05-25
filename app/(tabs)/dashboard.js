@@ -463,29 +463,23 @@ export default function Dashboard() {
         <View style={styles.statsGrid}>
           {/* Stat: Active Plants */}
           <View style={styles.statCard}>
-            <View style={styles.statTopRow}>
+            <View style={styles.statMetricRow}>
               <View style={[styles.statIconWrapper, { backgroundColor: "#f1f5eb" }]}>
                 <Ionicons name="book-outline" size={22} color="#1a3c2a" />
               </View>
-              <View style={styles.statBadgeGreen}>
-                <Text style={styles.statBadgeGreenText}>+{totalPlants}</Text>
-              </View>
+              <Text style={styles.statValue}>{totalPlants}</Text>
             </View>
-            <Text style={styles.statValue}>{totalPlants}</Text>
             <Text style={styles.statLabel}>Plantas activas</Text>
           </View>
 
           {/* Stat: Care Consistency */}
           <View style={styles.statCard}>
-            <View style={styles.statTopRow}>
+            <View style={styles.statMetricRow}>
               <View style={[styles.statIconWrapper, { backgroundColor: "#fff5e6" }]}>
                 <Ionicons name="calendar-outline" size={22} color="#fb8500" />
               </View>
-              <View style={styles.statBadgeOrange}>
-                <Text style={styles.statBadgeOrangeText}>+{constancia}%</Text>
-              </View>
+              <Text style={styles.statValue}>{constancia}%</Text>
             </View>
-            <Text style={styles.statValue}>{constancia}%</Text>
             <Text style={styles.statLabel}>Constancia de cuidado</Text>
           </View>
         </View>
@@ -495,66 +489,85 @@ export default function Dashboard() {
           
           {/* Card 1: Frecuencia de Riego Ideal */}
           <View style={[styles.matrixSquareCard, { backgroundColor: "#eef7ff" }]}>
-            <Text style={[styles.matrixCardKicker, { color: "#1d4ed8" }]}>Frecuencia de riego ideal</Text>
-            <View style={styles.statIconWrapperSquare}>
-              <Ionicons name="flask-outline" size={24} color="#3b82f6" />
+            <View style={styles.matrixInfoRow}>
+              <View style={styles.matrixTextSide}>
+                <Text style={[styles.matrixCardKicker, { color: "#1d4ed8" }]}>Frecuencia de riego ideal</Text>
+                <Text style={styles.matrixCardValue}>{riegoIdeal}%</Text>
+                <Text style={styles.matrixCardLabel}>Riego Ideal</Text>
+              </View>
+              <View style={styles.statIconWrapperSquare}>
+                <Ionicons name="flask-outline" size={24} color="#3b82f6" />
+              </View>
             </View>
-            <Text style={styles.matrixCardValue}>{riegoIdeal}%</Text>
-            <Text style={styles.matrixCardLabel}>Riego Ideal</Text>
           </View>
 
           {/* Card 2: Planta más Consentida */}
           <View style={[styles.matrixSquareCard, { backgroundColor: "#f0f9f1" }]}>
-            <Text style={[styles.matrixCardKicker, { color: "#14532d" }]}>Planta más consentida</Text>
-            <View style={styles.avatarDashedBorderSquare}>
-              {consentidaPlant?.imageUrl ? (
-                <Image source={{ uri: consentidaPlant.imageUrl }} style={styles.avatarImageSquare} />
-              ) : (
-                <Ionicons name="flower-outline" size={20} color="#a7c957" />
-              )}
+            <View style={styles.matrixInfoRow}>
+              <View style={styles.matrixTextSide}>
+                <Text style={[styles.matrixCardKicker, { color: "#14532d" }]}>Planta más consentida</Text>
+                <Text style={styles.matrixCardName} numberOfLines={2}>
+                  {consentidaPlant ? (consentidaPlant.commonNames?.[0] || consentidaPlant.name) : "Sin datos"}
+                </Text>
+                <Text style={[styles.matrixCardLabel, { color: "#16a34a" }]}>{consentidaCount} tareas realizadas</Text>
+              </View>
+              <View style={[styles.avatarDashedBorderSquare, styles.matrixSideVisual]}>
+                {consentidaPlant?.imageUrl ? (
+                  <Image source={{ uri: consentidaPlant.imageUrl }} style={styles.avatarImageSquare} />
+                ) : (
+                  <Ionicons name="flower-outline" size={20} color="#a7c957" />
+                )}
+              </View>
             </View>
-            <Text style={styles.matrixCardName} numberOfLines={1}>
-              {consentidaPlant ? (consentidaPlant.commonNames?.[0] || consentidaPlant.name) : "Sin datos"}
-            </Text>
-            <Text style={[styles.matrixCardLabel, { color: "#16a34a" }]}>{consentidaCount} tareas realizadas</Text>
           </View>
 
           {/* Card 3: Planta con más Riesgo */}
           <View style={[styles.matrixSquareCard, { backgroundColor: numAtRisk > 0 ? "#fff1f1" : "#f1fdf3" }]}>
-            <Text style={[styles.matrixCardKicker, { color: numAtRisk > 0 ? "#dc2626" : "#14532d" }]}>En más riesgo</Text>
-            {numAtRisk > 0 && enRiesgoPlant ? (
-              <>
-                <View style={[styles.avatarDashedBorderSquare, { borderColor: "#f44336" }]}>
+            <View style={styles.matrixInfoRow}>
+              <View style={styles.matrixTextSide}>
+                <Text style={[styles.matrixCardKicker, { color: numAtRisk > 0 ? "#dc2626" : "#14532d" }]}>En más riesgo</Text>
+                {numAtRisk > 0 && enRiesgoPlant ? (
+                  <>
+                    <Text style={[styles.matrixCardName, { color: "#c62828" }]} numberOfLines={2}>
+                      {enRiesgoPlant.commonNames?.[0] || enRiesgoPlant.name}
+                    </Text>
+                    <Text style={[styles.matrixCardLabel, { color: "#dc2626" }]}>{overdueCount} tareas pendientes</Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={[styles.matrixCardName, { color: "#2e7d32" }]} numberOfLines={2}>¡Fiu! Todo Sano</Text>
+                    <Text style={[styles.matrixCardLabel, { color: "#16a34a" }]}>Más Riesgo (0)</Text>
+                  </>
+                )}
+              </View>
+              <View style={[styles.avatarDashedBorderSquare, styles.matrixSideVisual, { borderColor: numAtRisk > 0 ? "#f44336" : "#2e7d32" }]}>
+                {numAtRisk > 0 && enRiesgoPlant ? (
+                  <>
                   {enRiesgoPlant.imageUrl ? (
                     <Image source={{ uri: enRiesgoPlant.imageUrl }} style={styles.avatarImageSquare} />
                   ) : (
                     <Ionicons name="alert-outline" size={20} color="#f44336" />
                   )}
-                </View>
-                <Text style={[styles.matrixCardName, { color: "#c62828" }]} numberOfLines={1}>
-                  {enRiesgoPlant.commonNames?.[0] || enRiesgoPlant.name}
-                </Text>
-                <Text style={[styles.matrixCardLabel, { color: "#dc2626" }]}>{overdueCount} tareas pendientes</Text>
-              </>
-            ) : (
-              <>
-                <View style={[styles.avatarDashedBorderSquare, { borderColor: "#2e7d32" }]}>
+                  </>
+                ) : (
                   <Ionicons name="happy-outline" size={22} color="#2e7d32" />
-                </View>
-                <Text style={[styles.matrixCardName, { color: "#2e7d32" }]} numberOfLines={1}>¡Fiu! Todo Sano</Text>
-                <Text style={[styles.matrixCardLabel, { color: "#16a34a" }]}>Más Riesgo (0)</Text>
-              </>
-            )}
+                )}
+              </View>
+            </View>
           </View>
 
           {/* Card 4: Racha de cumplimiento */}
           <View style={[styles.matrixSquareCard, { backgroundColor: streakActive ? "#fff8f0" : "#f3f4f4" }]}>
-            <Text style={[styles.matrixCardKicker, { color: streakActive ? "#9a3412" : "#6b7280" }]}>Racha de cumplimiento</Text>
-            <View style={[styles.streakCircleContainerSquare, !streakActive && styles.streakInactiveCircle]}>
-              <Ionicons name="flame" size={22} color={streakActive ? "#fb8500" : "#9aa0a6"} />
+            <View style={styles.matrixInfoRow}>
+              <View style={styles.matrixTextSide}>
+                <Text style={[styles.matrixCardKicker, { color: streakActive ? "#9a3412" : "#6b7280" }]}>Racha de cumplimiento</Text>
+                <Text style={[styles.matrixCardValue, !streakActive && styles.streakInactiveText]}>{streak}</Text>
+                <Text style={[styles.matrixCardLabel, !streakActive && styles.streakInactiveText]}>días de racha</Text>
+              </View>
+              <View style={[styles.streakCircleContainerSquare, styles.matrixSideVisual, !streakActive && styles.streakInactiveCircle]}>
+                <Ionicons name="flame" size={22} color={streakActive ? "#fb8500" : "#9aa0a6"} />
+              </View>
             </View>
-            <Text style={[styles.matrixCardValue, !streakActive && styles.streakInactiveText]}>{streak}</Text>
-            <Text style={[styles.matrixCardLabel, !streakActive && styles.streakInactiveText]}>días de racha</Text>
           </View>
 
         </View>
@@ -850,6 +863,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
+  statMetricRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 8,
+  },
   statIconWrapper: {
     padding: 8,
     borderRadius: 12,
@@ -915,7 +934,7 @@ const styles = StyleSheet.create({
     height: 146,
     borderRadius: 28,
     padding: 14,
-    alignItems: "center",
+    alignItems: "stretch",
     justifyContent: "center",
     elevation: 2,
     shadowColor: "#000",
@@ -931,7 +950,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
+    marginBottom: 0,
     elevation: 1,
   },
   avatarDashedBorderSquare: {
@@ -958,7 +977,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
+    marginBottom: 0,
     elevation: 1,
   },
   streakInactiveCircle: {
@@ -974,28 +993,41 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   matrixCardKicker: {
-    width: "92%",
+    width: "100%",
     fontSize: 9,
     lineHeight: 12,
     fontWeight: "900",
-    textAlign: "center",
+    textAlign: "left",
     textTransform: "uppercase",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   matrixCardName: {
     fontSize: 14,
     fontWeight: "bold",
     color: "#1a3c2a",
     marginBottom: 2,
-    textAlign: "center",
-    width: "90%",
+    textAlign: "left",
+    width: "100%",
   },
   matrixCardLabel: {
     fontSize: 11,
     color: "#666",
     fontWeight: "600",
     textTransform: "uppercase",
-    textAlign: "center",
+    textAlign: "left",
+  },
+  matrixInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  matrixTextSide: {
+    flex: 1,
+    minWidth: 0,
+  },
+  matrixSideVisual: {
+    marginBottom: 0,
   },
 
   fullWidthCard: {

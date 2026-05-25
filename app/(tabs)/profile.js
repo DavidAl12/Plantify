@@ -249,14 +249,6 @@ function PersonalInfo({ user, onUserChange, onPickImage }) {
         />
       </Field>
 
-      <Field label="Rol en el jardin">
-        <TextInput
-          value="Cuidador principal"
-          editable={false}
-          style={[styles.input, styles.disabledInput]}
-        />
-      </Field>
-
       <SaveButton label="Guardar cambios" onPress={handleSave} />
       <StatusMessage message={message} isError={isError} />
     </View>
@@ -368,6 +360,7 @@ function SecuritySection() {
 function NotificationsSection() {
   const [freq, setFreq] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
   const enabled = freq !== "off";
   const options = [
     { value: null, label: "Cada 5 horas" },
@@ -395,6 +388,8 @@ function NotificationsSection() {
     setSaving(false);
   };
 
+  const selectedOption = options.find((option) => option.value === freq) || options[0];
+
   return (
     <View style={styles.form}>
       <View style={styles.switchRow}>
@@ -411,20 +406,43 @@ function NotificationsSection() {
       </View>
 
       {enabled ? (
-        <View style={styles.optionGroup}>
-          {options.map((option) => (
-            <TouchableOpacity
-              key={String(option.value)}
-              style={styles.radioRow}
-              onPress={() => setFreq(option.value)}
-              activeOpacity={0.85}
-            >
-              <View style={styles.radioOuter}>
-                {freq === option.value ? <View style={styles.radioInner} /> : null}
-              </View>
-              <Text style={styles.radioLabel}>{option.label}</Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.frequencyBox}>
+          <TouchableOpacity
+            style={styles.frequencyHeader}
+            onPress={() => setShowOptions((current) => !current)}
+            activeOpacity={0.85}
+          >
+            <View>
+              <Text style={styles.frequencyTitle}>Frecuencia</Text>
+              <Text style={styles.frequencyValue}>{selectedOption.label}</Text>
+            </View>
+            <Ionicons
+              name={showOptions ? "chevron-up" : "chevron-down"}
+              size={20}
+              color={COLORS.primary}
+            />
+          </TouchableOpacity>
+
+          {showOptions ? (
+            <View style={styles.optionGroup}>
+              {options.map((option) => (
+                <TouchableOpacity
+                  key={String(option.value)}
+                  style={styles.radioRow}
+                  onPress={() => {
+                    setFreq(option.value);
+                    setShowOptions(false);
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.radioOuter}>
+                    {freq === option.value ? <View style={styles.radioInner} /> : null}
+                  </View>
+                  <Text style={styles.radioLabel}>{option.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -567,7 +585,7 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 36,
     right: 14,
-    bottom: 18,
+    top: 39,
     backgroundColor: "rgba(167, 201, 87, 0.14)",
     alignItems: "center",
     justifyContent: "center",
@@ -718,10 +736,36 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   optionGroup: {
-    backgroundColor: "#f8faf5",
+    backgroundColor: "#ffffff",
     borderRadius: 12,
     padding: 8,
+    marginTop: 8,
+  },
+  frequencyBox: {
+    backgroundColor: "#f8faf5",
+    borderRadius: 14,
+    padding: 10,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e7efe1",
+  },
+  frequencyHeader: {
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 4,
+  },
+  frequencyTitle: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#324036",
+  },
+  frequencyValue: {
+    fontSize: 13,
+    color: "#7c8279",
+    marginTop: 3,
+    fontWeight: "700",
   },
   radioRow: {
     flexDirection: "row",

@@ -1,38 +1,42 @@
 // src/hooks/useSocialAuth.js
-import * as Google from "expo-auth-session/providers/google";
 import * as AuthSession from "expo-auth-session";
+import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
-import { useEffect, useState } from "react";
-import { Platform, Alert } from "react-native";
 import {
+  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   OAuthProvider,
   signInWithCredential,
-  signInWithPopup,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile
+  signInWithPopup,
+  updateProfile,
 } from "firebase/auth";
+import { useEffect, useState } from "react";
+import { Alert, Platform } from "react-native";
 import { auth } from "../config/firebase";
 import { OAUTH_CONFIG } from "../config/oauth";
 
-// Requerido para cerrar la ventana del navegador web al finalizar la autenticación en apps nativas
 WebBrowser.maybeCompleteAuthSession();
+
+const googleRedirectUri = AuthSession.makeRedirectUri({
+  native: "com.arley_col.Perflora:/oauthredirect",
+});
 
 export function useSocialAuth() {
   const [loading, setLoading] = useState(false);
 
-  // 1. Google Auth Request
-  const [, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
-    clientId: OAUTH_CONFIG.google.webClientId,
-    iosClientId: OAUTH_CONFIG.google.iosClientId,
+  useEffect(() => {
+    console.log("Google redirect URI:", googleRedirectUri);
+  }, []);
+
+  const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+    webClientId: OAUTH_CONFIG.google.webClientId,
     androidClientId: OAUTH_CONFIG.google.androidClientId,
-    redirectUri: AuthSession.makeRedirectUri({
-      scheme: "perflora",
-    }),
+    iosClientId: OAUTH_CONFIG.google.iosClientId,
+    scopes: ["profile", "email"],
+    redirectUri: googleRedirectUri,
   });
 
-  // 2. Microsoft Auth Request
   const [, msResponse, promptMsAsync] = AuthSession.useAuthRequest(
     {
       clientId: OAUTH_CONFIG.microsoft.clientId,
@@ -51,16 +55,14 @@ export function useSocialAuth() {
     }
   );
 
-  // Validadores de marcadores de posición (placeholders)
   const isGooglePlaceholder = OAUTH_CONFIG.google.webClientId.includes("YOUR_WEB_CLIENT_ID");
   const isMicrosoftPlaceholder = OAUTH_CONFIG.microsoft.clientId.includes("YOUR_MICROSOFT_CLIENT_ID");
 
-  // Fallback de desarrollo para cuando no se han configurado los IDs de cliente reales
   const handlePlaceholderLogin = async (providerName) => {
     return new Promise((resolve) => {
       Alert.alert(
-        "Configuración Requerida",
-        `Las credenciales reales de ${providerName} no están configuradas en 'src/config/oauth.js'.\n\n¿Quieres usar el inicio de sesión de prueba para continuar en desarrollo?`,
+        "Configuracion requerida",
+        `Las credenciales reales de ${providerName} no estan configuradas en 'src/config/oauth.js'.\n\nQuieres usar el inicio de sesion de prueba para continuar en desarrollo?`,
         [
           {
             text: "Cancelar",
@@ -68,19 +70,17 @@ export function useSocialAuth() {
             style: "cancel",
           },
           {
-            text: "Iniciar sesión de prueba",
+            text: "Iniciar sesion de prueba",
             onPress: async () => {
               setLoading(true);
               const testEmail = `test_${providerName.toLowerCase()}@perflora.com`;
               const testPassword = "PerfloraTest123!";
               try {
-                // Intentar iniciar sesión con la cuenta de prueba
                 await signInWithEmailAndPassword(auth, testEmail, testPassword);
                 resolve(true);
               } catch (error) {
-                // Si el usuario no existe, lo creamos dinámicamente
                 if (
-                  error.code === "auth/user-not-found" || 
+                  error.code === "auth/user-not-found" ||
                   error.code === "auth/invalid-credential"
                 ) {
                   try {
@@ -105,7 +105,7 @@ export function useSocialAuth() {
                   console.error("Error en login de prueba:", error);
                   Alert.alert(
                     "Error",
-                    "No se pudo iniciar sesión de prueba: " + error.message
+                    "No se pudo iniciar sesion de prueba: " + error.message
                   );
                   resolve(false);
                 }
@@ -119,27 +119,32 @@ export function useSocialAuth() {
     });
   };
 
-  // 3. Efecto para escuchar la respuesta de Google (Nativo)
   useEffect(() => {
-    if (googleResponse?.type === "success") {
-      const { id_token } = googleResponse.params;
-      if (id_token) {
-        setLoading(true);
-        const credential = GoogleAuthProvider.credential(id_token);
-        signInWithCredential(auth, credential)
-          .catch((error) => {
-            console.error("Error de Firebase con credencial de Google:", error);
-            Alert.alert(
-              "Error de Autenticación",
-              "Hubo un error al iniciar sesión en Firebase con Google: " + error.message
-            );
-          })
-          .finally(() => setLoading(false));
-      }
+    if (googleResponse?.type !== "success") {
+      return;
     }
+
+    const idToken = googleResponse.authentication?.idToken || googleResponse.params?.id_token;
+
+    if (!idToken) {
+      setLoading(false);
+      Alert.alert("Error", "Google no devolvio un token valido para Firebase.");
+      return;
+    }
+
+    setLoading(true);
+    const credential = GoogleAuthProvider.credential(idToken);
+    signInWithCredential(auth, credential)
+      .catch((error) => {
+        console.error("Error de Firebase con credencial de Google:", error);
+        Alert.alert(
+          "Error de autenticacion",
+          "Hubo un error al iniciar sesion en Firebase con Google: " + error.message
+        );
+      })
+      .finally(() => setLoading(false));
   }, [googleResponse]);
 
-  // 4. Efecto para escuchar la respuesta de Microsoft (Nativo)
   useEffect(() => {
     if (msResponse?.type === "success") {
       const { id_token } = msResponse.params;
@@ -153,8 +158,8 @@ export function useSocialAuth() {
           .catch((error) => {
             console.error("Error de Firebase con credencial de Microsoft:", error);
             Alert.alert(
-              "Error de Autenticación",
-              "Hubo un error al iniciar sesión en Firebase con Microsoft: " + error.message
+              "Error de autenticacion",
+              "Hubo un error al iniciar sesion en Firebase con Microsoft: " + error.message
             );
           })
           .finally(() => setLoading(false));
@@ -162,7 +167,6 @@ export function useSocialAuth() {
     }
   }, [msResponse]);
 
-  // 5. Función manejadora de inicio de sesión con Google
   const loginWithGoogle = async () => {
     if (Platform.OS === "web") {
       if (isGooglePlaceholder) {
@@ -174,7 +178,7 @@ export function useSocialAuth() {
         await signInWithPopup(auth, provider);
       } catch (error) {
         console.error("Google sign in error on Web:", error);
-        Alert.alert("Error", "Error al iniciar sesión con Google en Web: " + error.message);
+        Alert.alert("Error", "Error al iniciar sesion con Google en Web: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -190,13 +194,12 @@ export function useSocialAuth() {
         }
       } catch (error) {
         console.error("Google prompt error:", error);
-        Alert.alert("Error", "No se pudo iniciar la autenticación con Google.");
+        Alert.alert("Error", "No se pudo iniciar la autenticacion con Google.");
         setLoading(false);
       }
     }
   };
 
-  // 6. Función manejadora de inicio de sesión con Microsoft
   const loginWithMicrosoft = async () => {
     if (Platform.OS === "web") {
       if (isMicrosoftPlaceholder) {
@@ -208,7 +211,7 @@ export function useSocialAuth() {
         await signInWithPopup(auth, provider);
       } catch (error) {
         console.error("Microsoft sign in error on Web:", error);
-        Alert.alert("Error", "Error al iniciar sesión con Microsoft en Web: " + error.message);
+        Alert.alert("Error", "Error al iniciar sesion con Microsoft en Web: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -224,7 +227,7 @@ export function useSocialAuth() {
         }
       } catch (error) {
         console.error("Microsoft prompt error:", error);
-        Alert.alert("Error", "No se pudo iniciar la autenticación con Microsoft.");
+        Alert.alert("Error", "No se pudo iniciar la autenticacion con Microsoft.");
         setLoading(false);
       }
     }

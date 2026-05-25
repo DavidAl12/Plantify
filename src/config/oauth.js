@@ -11,12 +11,12 @@ export const OAUTH_CONFIG = {
   google: {
     // ID de cliente Web (Necesario para Web y Expo Go)
     webClientId:
-      "932186460404-9e6qrv25c6haqh4mp121gh57m5bmlteo.apps.googleusercontent.com",
+      "932186460404-rr42jai814crrtsnri5dksh6tkmuuo33.apps.googleusercontent.com",
 
     // IDs de cliente nativos (Necesarios para builds de desarrollo / producción de Android/iOS)
     androidClientId:
       "932186460404-qrsbihhkqlkjgjfcedbtqne131qrif9t.apps.googleusercontent.com",
-    iosClientId: "",
+    iosClientId: "932186460404-og2pgebqs39qgbdkdks08g46po360eo9.apps.googleusercontent.com",
   },
   microsoft: {
     // ID de aplicación (cliente) en Azure

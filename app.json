@@ -5,18 +5,38 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logoApp.png",
-    "scheme": "perflora",
+    "scheme": ["perflora", "com.arley_col.Perflora"],
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "perflora"
+            },
+            {
+              "scheme": "com.arley_col.Perflora"
+            },
+            {
+              "scheme": "https",
+              "host": "*.redirect.activity.compat"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
+
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logoApp.png",
         "backgroundImage": "./assets/images/logoApp.png",
         "monochromeImage": "./assets/images/logoApp.png",
         "backgroundColor": "#ebffe7"
       },
+
       "predictiveBackGestureEnabled": false,
       "package": "com.arley_col.Perflora"
     },
@@ -24,19 +44,26 @@
       "output": "static",
       "favicon": "./assets/images/logoApp.png"
     },
-    "plugins": [
-      "expo-router",
-      "expo-web-browser",
-      "expo-updates",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash.png",
-          "resizeMode": "cover",
-          "backgroundColor": "#0D0D0D"
-        }
-      ]
-    ],
+   "plugins": [
+  "expo-router",
+  "expo-web-browser",
+  "expo-updates",
+  [
+    "expo-splash-screen",
+    {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#F8F6EF",
+      "imageWidth": 288,
+      "android": {
+        "drawable": {
+          "icon": "./assets/images/transparent-splash-icon.xml"
+        },
+        "backgroundColor": "#F8F6EF"
+      }
+    }
+  ]
+],
     "runtimeVersion": {
       "policy": "appVersion"
     },
